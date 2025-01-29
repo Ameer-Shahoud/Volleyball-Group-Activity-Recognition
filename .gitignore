@@ -1,0 +1,7 @@
+__pycache__
+.history
+config.json
+
+main.py
+Models.__pycache__
+Utils.__pycache__
