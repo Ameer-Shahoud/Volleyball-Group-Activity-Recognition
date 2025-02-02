@@ -92,8 +92,7 @@ def load_video_annot(video: int):
 
 def load_dataset_full_annotations():
     videos_root = cf.get_config().dataset.videos_path
-    tracking_boxes_annotation_root = cf.get_config(
-    ).dataset.tracking_boxes_annotation_path
+    tracking_boxes_annotation_root = cf.get_config().dataset.tracking_boxes_annotation_path
 
     videos_dirs = os.listdir(cf.get_config().dataset.videos_path)
     videos_dirs.sort()
