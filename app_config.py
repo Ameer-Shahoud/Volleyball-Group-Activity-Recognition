@@ -24,6 +24,6 @@ __config: _Config = None
 class _DatasetConfig:
     def __init__(self, dataset_json, output):
         self.root: str = dataset_json.get('root')
-        self.videos_path: str = f'{self.root}/{dataset_json.get('videos_path')}'
-        self.tracking_boxes_annotation_path: str = f'{self.root}/{dataset_json.get('tracking_boxes_annotation_path')}'
-        self.pkl_path: str = f'{output}/{dataset_json.get('pkl_path')}'
+        self.videos_path: str = f"{self.root}/{dataset_json.get('videos_path')}"
+        self.tracking_boxes_annotation_path: str = f"{self.root}/{dataset_json.get('tracking_boxes_annotation_path')}"
+        self.pkl_path: str = f"{output}/{dataset_json.get('pkl_path')}"
