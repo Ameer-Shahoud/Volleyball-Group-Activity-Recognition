@@ -12,3 +12,7 @@ class BoxInfo:
         self.lost = lost
         self.grouping = grouping
         self.generated = generated
+
+    def __repr__(self):
+        return f"""player: {self.player_ID} \t class: {self.category} \t box: (x1: {self.box[0]}, y1: {self.box[1]}) - (x2: {self.box[2]}, y2: {self.box[3]})
+        """

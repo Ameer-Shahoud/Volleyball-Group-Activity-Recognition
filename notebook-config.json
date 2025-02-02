@@ -1,5 +1,10 @@
 {
-    "root_path": "",
-    "dataset_path": "/kaggle/input/group-activity-recognition-volleyball",
-    "is_notebook": true
+    "output_path": "/kaggle/working",
+    "is_notebook": true,
+    "dataset": {
+        "root": "/kaggle/input/group-activity-recognition-volleyball",
+        "videos_path": "videos",
+        "tracking_boxes_annotation_path": "volleyball_tracking_annotation",
+        "pkl_path": "annots.pkl"
+    }
 }
