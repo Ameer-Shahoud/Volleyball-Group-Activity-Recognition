@@ -2,12 +2,12 @@ import json
 
 
 def init_config(path: str):
-    global __config
-    __config = _Config(path)
+    global _config
+    _config = _Config(path)
 
 
 def get_config():
-    return __config
+    return _config
 
 
 class _Config:
@@ -18,7 +18,7 @@ class _Config:
         self.dataset: _DatasetConfig = _DatasetConfig(self.json.get('dataset'), self.output_path)
 
 
-__config: _Config = None
+_config: _Config = None
 
 
 class _DatasetConfig:
