@@ -1,8 +1,7 @@
-__pycache__
+**/__pycache__
 .history
-config.json
+**/local_*
+**/local-*
 
 main.py
-Models.__pycache__
-Utils.__pycache__
 Dataset

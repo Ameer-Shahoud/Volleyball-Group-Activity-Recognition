@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
-from Models.box_Info import BoxInfo
-import app_config as cf
+from Models.box import BoxInfo
+from Models.config_mixin import _ConfigMixin
 
 
 def add_box(img, box_info: BoxInfo, font=cv2.FONT_HERSHEY_SIMPLEX, color=(255, 0, 0)):
@@ -12,7 +12,7 @@ def add_box(img, box_info: BoxInfo, font=cv2.FONT_HERSHEY_SIMPLEX, color=(255, 0
 
 
 def show_image(img, title: str, figsize=(80, 20)):
-    if cf.get_config().is_notebook:
+    if _ConfigMixin.get_cf(None).is_notebook:
         plt.figure(figsize=figsize)
         plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         plt.axis('off')

@@ -15,3 +15,7 @@ def check():
 
     current_device = torch.cuda.current_device() if torch.cuda.is_available() else "CPU"
     print(f"Current device: {current_device}")
+
+
+def get_device():
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
