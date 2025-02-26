@@ -9,7 +9,21 @@ from Utils.cuda import get_device
 
 
 class _TrainingBase(_ConfigMixin, ABC):
+    """
+    Abstract base class for training pipelines.
+    It provides a consistent workflow for training, evaluation, and testing.
+
+    Attributes:
+        train_loader (DataLoader): DataLoader for training data.
+        val_loader (DataLoader): DataLoader for validation data.
+        test_loader (DataLoader): DataLoader for test data.
+        model (nn.Module): Neural network model to be trained.
+        optimizer (torch.optim.Optimizer): Optimizer for updating model weights.
+        scheduler (torch.optim.lr_scheduler): Learning rate scheduler.
+        criterion (nn.Module): Loss function.
+    """
     def __init__(self):
+        """Initializes the training pipeline by preparing loaders, model, and optimizer."""
         self._prepare_loaders()
         self._prepare_model()
         self._prepare_optimizer()

@@ -13,9 +13,25 @@ from Utils.dataset import get_frame_img_path
 
 
 class _Dataset(Dataset, _ConfigMixin, ABC):
+    """
+    Abstract base class for creating custom datasets.
+    It manages loading video annotations and preparing data for training and evaluation.
+
+    Attributes:
+        _level (ClassificationLevel): Classification level (IMAGE or PLAYER).
+        _type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
+        _videos (list): List of video IDs.
+        _videos_annotations (dict): Dictionary of video IDs and corresponding VideoAnnotations objects.
+    """
     _level: ClassificationLevel = None
 
     def __init__(self, type: DatasetType):
+        """
+        Initializes the dataset by loading video annotations and configurations.
+
+        Args:
+            type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
+        """
         self._type = type
         self._videos = self.get_cf().dataset.get_videos(type)
         self._videos_annotations: dict[int, VideoAnnotations] = {}
@@ -54,12 +70,27 @@ class _Dataset(Dataset, _ConfigMixin, ABC):
 
 
 class ImageDataset(_Dataset):
+    """
+    Custom dataset for image-level classification.
+    It loads images, applies transformations, and encodes labels.
+
+    Attributes:
+        _level (ClassificationLevel): Classification level set to IMAGE.
+        __flatten_dataset (list): Flattened list of ImageDatasetItem objects.
+    """
     def __init__(self, type):
+        """Initializes the ImageDataset by setting classification level to IMAGE."""
         self._level = ClassificationLevel.IMAGE
         super().__init__(type)
         self.__flatten_dataset = self.get_flatten()
 
     def get_flatten(self):
+        """
+        Flattens the dataset into a list of ImageDatasetItem objects.
+
+        Returns:
+            list[ImageDatasetItem]: Flattened list of dataset items.
+        """
         dataset: list[ImageDatasetItem] = []
         for _, v in self._videos_annotations.items():
             for __, c in v.get_all_clips_annotations():
@@ -78,6 +109,15 @@ class ImageDataset(_Dataset):
         return len(self.__flatten_dataset)
 
     def __getitem__(self, index):
+        """
+        Retrieves an item from the dataset by index.
+
+        Args:
+            index (int): Index of the item.
+
+        Returns:
+            tuple: A tuple containing the transformed image tensor and its label.
+        """
         item: ImageDatasetItem = self.__flatten_dataset[index]
 
         try:
@@ -99,6 +139,16 @@ class ImageDataset(_Dataset):
 
 
 class ImageDatasetItem:
+    """
+    Class to organize individual dataset items for image-level classification.
+
+    Attributes:
+        video (int): Video ID.
+        clip (int): Clip ID within the video.
+        frame (int): Frame ID within the clip.
+        label (str): Action label for the image.
+        img_path (str): Path to the image file.
+    """
     def __init__(self, video: int, clip: int, frame: int, label: str, img_path: str):
         self.video = video
         self.clip = clip
@@ -107,6 +157,7 @@ class ImageDatasetItem:
         self.img_path = img_path
 
     def to_dict(self):
+        """Converts the ImageDatasetItem object to a dictionary."""
         return {
             "video": self.video,
             "clip": self.clip,
@@ -117,7 +168,17 @@ class ImageDatasetItem:
 
 
 class PlayerDataset(_Dataset):
+    """
+    Placeholder class for player-level classification dataset.
+    Inherits from _Dataset.
+    """
     def __init__(self, type):
+        """
+        Initializes the PlayerDataset by setting classification level to PLAYER.
+
+        Args:
+            type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
+        """
         self._level = ClassificationLevel.PLAYER
         super().__init__(type)
         self.__flatten_dataset = self.get_flatten()

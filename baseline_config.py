@@ -4,13 +4,17 @@ from Enums.dataset_type import DatasetType
 import app_config as cf
 import torchvision.transforms as transforms
 
+# Global baseline configuration object
+_bl_config: _BLConfig = None
 
 def init_bl_config(path: str):
+    """Initializes the baseline configuration from a JSON file."""
     global _bl_config
     _bl_config = _BLConfig(path)
 
 
 def get_bl_config():
+    """Retrieves the global baseline configuration object."""
     return _bl_config
 
 
@@ -19,7 +23,18 @@ def is_available():
 
 
 class _BLConfig:
+    """
+    Class for managing baseline configuration settings.
+
+    Attributes:
+        json (dict): Parsed JSON data from the baseline configuration file.
+        id (str): Identifier for the baseline experiment.
+        output_dir (str): Output directory for storing experiment results.
+        dataset (_DatasetConfig): Configuration for dataset preprocessing.
+        training (_TrainingConfig): Configuration for training settings.
+    """
     def __init__(self, path):
+        """Initializes the _BLConfig object by loading the baseline configuration."""
         self.json: dict = json.load(open(path, 'r'))
         self.id: str = self.json.get('id')
         self.output_dir: str = f"{cf.get_config().output_dir}/{self.json.get('output_dir')}/{self.id}"
@@ -28,11 +43,19 @@ class _BLConfig:
             self.json.get('training'))
 
 
-_bl_config: _BLConfig = None
 
 
 class _DatasetConfig:
+    """
+    Class for managing dataset preprocessing settings.
+
+    Attributes:
+        past_frames_count (int): Number of past frames for temporal modeling.
+        post_frames_count (int): Number of post frames for temporal modeling.
+        preprocess (_PreprocessConfig): Preprocessing transformations.
+    """
     def __init__(self, dataset_json: dict):
+        """Initializes the _DatasetConfig object for preprocessing settings."""
         self.past_frames_count: int = dataset_json.get('past_frames_count')
         self.post_frames_count: int = dataset_json.get('post_frames_count')
         self.preprocess: _PreprocessConfig = _PreprocessConfig(
