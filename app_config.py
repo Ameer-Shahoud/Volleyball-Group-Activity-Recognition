@@ -6,7 +6,8 @@ from Enums.classification_level import ClassificationLevel
 from Enums.dataset_type import DatasetType
 
 # Global configuration object
-_config: _Config = None
+_config: '_Config' = None
+
 
 def init_config(path: str):
     """ Initializes the global configuration from a JSON file."""
@@ -34,6 +35,7 @@ class _Config:
         is_notebook (bool): Flag to indicate if running in a notebook environment.
         dataset (_DatasetConfig): Configuration for dataset settings.
     """
+
     def __init__(self, path):
         """Initializes the _Config object by loading the JSON configuration file."""
         self.json: dict = json.load(open(path, 'r'))
@@ -41,7 +43,7 @@ class _Config:
         self.is_notebook: bool = self.json.get('is_notebook')
         self.dataset: _DatasetConfig = _DatasetConfig(
             self.json.get('dataset'), self.output_dir)
-        #Seed setting for reproducibility
+        # Seed setting for reproducibility
         self.__seed()
 
     def __seed(self):
@@ -55,8 +57,6 @@ class _Config:
         torch.backends.cudnn.benchmark = False
 
 
-
-
 class _DatasetConfig:
     """
     Class for managing dataset configuration settings.
@@ -68,6 +68,7 @@ class _DatasetConfig:
         __categories (dict): Categories for image and player-level classification.
         __videos (dict): Video IDs for training, validation, and testing.
     """
+
     def __init__(self, dataset_json: dict, output):
         """Initializes the _DatasetConfig object by loading dataset settings."""
         self.root_dir: str = dataset_json.get('root_dir')

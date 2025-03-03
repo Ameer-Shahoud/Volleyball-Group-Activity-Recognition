@@ -1,3 +1,4 @@
+import torch
 from Models.training_base import _TrainingBase
 from Enums.classification_level import ClassificationLevel
 from Enums.dataset_type import DatasetType
@@ -29,12 +30,8 @@ class TrainingB1(_TrainingBase):
         optimizer (torch.optim.Optimizer): Optimizer for updating model weights.
         scheduler (torch.optim.lr_scheduler): Learning rate scheduler.
     """
-    def _prepare_loaders(self):
-        """
-        Prepares DataLoaders for training, validation, and testing.
 
-        - Loads ImageDataset for train, val, and test sets.
-        - Initializes DataLoaders with the configured batch size."""
+    def _prepare_loaders(self):
         train_dataset = ImageDataset(type=DatasetType.TRAIN)
         val_dataset = ImageDataset(type=DatasetType.VAL)
         test_dataset = ImageDataset(type=DatasetType.TEST)
@@ -49,14 +46,6 @@ class TrainingB1(_TrainingBase):
             test_dataset, batch_size=batch_size, shuffle=False)
 
     def _prepare_model(self):
-        """
-        Prepares the model for training.
-
-        - Loads a pre-trained ResNet50 model.
-        - Sets the classification level to IMAGE.
-        - Freezes all layers except 'layer4' and 'fc'.
-        - Initializes a custom classifier layer for group activity classification.
-        """
         self.model = ModelBase(
             backbone=models.resnet50(weights=models.ResNet50_Weights.DEFAULT),
             level=ClassificationLevel.IMAGE
@@ -66,12 +55,6 @@ class TrainingB1(_TrainingBase):
             .set_backbone_layer_requires_grad('fc', True)
 
     def _prepare_optimizer(self):
-        """
-        Prepares the optimizer and learning rate scheduler.
-
-        - Uses Adam optimizer for updating model weights.
-        - Initializes a learning rate scheduler (ReduceLROnPlateau).  
-        """
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(
             (p for p in self.model.parameters() if p.requires_grad),
@@ -82,58 +65,40 @@ class TrainingB1(_TrainingBase):
         )
 
     def _get_train_loader(self):
-        """
-        Retrieves the DataLoader for training data.
-
-        Returns:
-            DataLoader: DataLoader for training data.
-        """
         return self.train_loader
 
     def _get_val_loader(self):
-        """
-        Retrieves the DataLoader for validation data.
-
-        Returns:
-            DataLoader: DataLoader for validation data.
-        """
         return self.val_loader
 
     def _get_test_loader(self):
-        """
-        Retrieves the DataLoader for testing data.
-
-        Returns:
-            DataLoader: DataLoader for testing data.
-        """
         return self.test_loader
 
     def _train_mode(self):
-        """Sets the model to training mode."""
         self.model.train()
 
     def _eval_mode(self):
-        """Sets the model to evaluation mode."""
         self.model.eval()
 
-    def _on_epoch_step(self):
-        """Updates the learning rate scheduler at the end of each epoch."""
+    def _load_last_checkpoint(self) -> int:
+        checkpoint = torch.load(self._checkpoint_path)
+        self.model.load_state_dict(checkpoint['model_state_dict'])
+        self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        return checkpoint['epoch']
+
+    def _on_epoch_step(self, epoch: int):
         self.scheduler.step(self.val_loss)
+        torch.save({
+            'epoch': epoch + 1,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
+        },  self._checkpoint_path)
+
+    def _save_trained_model(self):
+        torch.save(self.model, self._model_path)
 
     def _train_step(self, inputs, labels):
-        """
-        Defines a single training step.
-
-        - Clears the gradients.
-        - Performs a forward pass to get predictions.
-        - Computes the loss using CrossEntropyLoss.
-        - Backpropagates the loss and updates the model weights.
-        - Calculates training accuracy.
-
-        Args:
-            inputs (torch.Tensor): Input images.
-            labels (torch.Tensor): Ground truth labels.
-        """
         self.optimizer.zero_grad()
         outputs = self.model(inputs)
         loss = self.criterion(outputs, labels)
@@ -148,17 +113,6 @@ class TrainingB1(_TrainingBase):
         self.total += labels.size(0)
 
     def _eval_step(self, inputs, labels):
-        """
-        Defines a single evaluation step.
-
-        - Performs a forward pass to get predictions.
-        - Computes the loss using CrossEntropyLoss.
-        - Calculates validation accuracy.
-
-        Args:
-            inputs (torch.Tensor): Input images.
-            labels (torch.Tensor): Ground truth labels.
-        """
         outputs = self.model(inputs)
         loss = self.criterion(outputs, labels)
 
@@ -169,17 +123,6 @@ class TrainingB1(_TrainingBase):
         self.val_total += labels.size(0)
 
     def _test_step(self, inputs, labels):
-        """
-        Defines a single testing step.
-
-        - Performs a forward pass to get predictions.
-        - Computes the loss using CrossEntropyLoss.
-        - Calculates test accuracy.
-
-        Args:
-            inputs (torch.Tensor): Input images.
-            labels (torch.Tensor): Ground truth labels.
-        """
         outputs = self.model(inputs)
         loss = self.criterion(outputs, labels)
 

@@ -1,11 +1,13 @@
 import json
+import os
 from Enums.classification_level import ClassificationLevel
 from Enums.dataset_type import DatasetType
 import app_config as cf
 import torchvision.transforms as transforms
 
 # Global baseline configuration object
-_bl_config: _BLConfig = None
+_bl_config: '_BLConfig' = None
+
 
 def init_bl_config(path: str):
     """Initializes the baseline configuration from a JSON file."""
@@ -33,16 +35,28 @@ class _BLConfig:
         dataset (_DatasetConfig): Configuration for dataset preprocessing.
         training (_TrainingConfig): Configuration for training settings.
     """
+
     def __init__(self, path):
         """Initializes the _BLConfig object by loading the baseline configuration."""
         self.json: dict = json.load(open(path, 'r'))
         self.id: str = self.json.get('id')
-        self.output_dir: str = f"{cf.get_config().output_dir}/{self.json.get('output_dir')}/{self.id}"
+        self.output_dir: str = os.path.join(
+            cf.get_config().output_dir, 'Output', self.json.get('output_dir'), self.id
+        )
         self.dataset: _DatasetConfig = _DatasetConfig(self.json.get('dataset'))
         self.training: _TrainingConfig = _TrainingConfig(
             self.json.get('training'))
 
+    def create_output_dir(self):
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
+    def clear_output_dir(self):
+        if os.path.exists(self.output_dir):
+            for file in os.listdir(self.output_dir):
+                file_path = os.path.join(self.output_dir, file)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
 
 
 class _DatasetConfig:
@@ -54,6 +68,7 @@ class _DatasetConfig:
         post_frames_count (int): Number of post frames for temporal modeling.
         preprocess (_PreprocessConfig): Preprocessing transformations.
     """
+
     def __init__(self, dataset_json: dict):
         """Initializes the _DatasetConfig object for preprocessing settings."""
         self.past_frames_count: int = dataset_json.get('past_frames_count')
