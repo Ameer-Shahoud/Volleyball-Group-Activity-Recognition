@@ -10,6 +10,8 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 
+from Utils import cuda
+
 
 class TrainingB1(_TrainingBase):
     """
@@ -64,6 +66,13 @@ class TrainingB1(_TrainingBase):
             self.optimizer, mode='min', factor=0.1, patience=2
         )
 
+    def _to_available_device(self):
+        self.model.to(cuda.get_device())
+        for state in self.optimizer.state.values():
+            if isinstance(state, torch.Tensor):
+                state.data = state.data.to(cuda.get_device())
+        self.scheduler.st
+
     def _get_train_loader(self):
         return self.train_loader
 
@@ -80,10 +89,12 @@ class TrainingB1(_TrainingBase):
         self.model.eval()
 
     def _load_last_checkpoint(self) -> int:
-        checkpoint = torch.load(self._checkpoint_path)
+        checkpoint = torch.load(self._checkpoint_path,
+                                map_location=cuda.get_device())
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        self._to_available_device()
         return checkpoint['epoch']
 
     def _on_epoch_step(self, epoch: int):

@@ -19,6 +19,7 @@ class _TrainingBase(_ConfigMixin, ABC):
         self._prepare_loaders()
         self._prepare_model()
         self._prepare_optimizer()
+        self._to_available_device()
         self._reset_train_metrics()
         self._reset_val_metrics()
         self._reset_test_metrics()
@@ -46,6 +47,10 @@ class _TrainingBase(_ConfigMixin, ABC):
     def _prepare_optimizer(self) -> None:
         """
         Prepares optimizer and configure it."""
+        pass
+
+    @abstractmethod
+    def _to_available_device(self) -> None:
         pass
 
     @abstractmethod
