@@ -1,5 +1,5 @@
 {
-    "output_dir": "/kaggle/working",
+    "output_dir": "/kaggle/working/Output",
     "is_notebook": true,
     "dataset": {
         "root_dir": "/kaggle/input/group-activity-recognition-volleyball",

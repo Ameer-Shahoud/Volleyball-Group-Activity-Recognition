@@ -1,4 +1,5 @@
 import os
+import pickle
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
@@ -43,9 +44,16 @@ class _Dataset(Dataset, _ConfigMixin, ABC):
         videos = sorted(
             map(int, [dir for dir in videos if dir in self._videos]))
 
-        for idx, video in enumerate(videos):
-            print(f'{idx}/{len(videos)} - Processing Dir {video}')
-            self._videos_annotations[video] = VideoAnnotations(video)
+        _pkl_path = self.get_cf().dataset.get_pkl_path(self._type)
+        if os.path.exists(_pkl_path):
+            with open(_pkl_path, "rb") as f:
+                self._videos_annotations = pickle.load(f)
+        else:
+            for idx, video in enumerate(videos):
+                print(f'{idx}/{len(videos)} - Processing Dir {video}')
+                self._videos_annotations[video] = VideoAnnotations(video)
+            with open(_pkl_path, "wb") as f:
+                pickle.dump(self._videos_annotations, f)
 
         self._encoder = LabelEncoder()
         self._encoder.fit(self.get_cf().dataset.get_categories(self._level))
@@ -78,6 +86,7 @@ class ImageDataset(_Dataset):
         _level (ClassificationLevel): Classification level set to IMAGE.
         __flatten_dataset (list): Flattened list of ImageDatasetItem objects.
     """
+
     def __init__(self, type):
         """Initializes the ImageDataset by setting classification level to IMAGE."""
         self._level = ClassificationLevel.IMAGE
@@ -149,6 +158,7 @@ class ImageDatasetItem:
         label (str): Action label for the image.
         img_path (str): Path to the image file.
     """
+
     def __init__(self, video: int, clip: int, frame: int, label: str, img_path: str):
         self.video = video
         self.clip = clip
@@ -172,6 +182,7 @@ class PlayerDataset(_Dataset):
     Placeholder class for player-level classification dataset.
     Inherits from _Dataset.
     """
+
     def __init__(self, type):
         """
         Initializes the PlayerDataset by setting classification level to PLAYER.

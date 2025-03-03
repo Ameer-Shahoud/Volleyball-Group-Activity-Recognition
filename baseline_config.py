@@ -41,13 +41,13 @@ class _BLConfig:
         self.json: dict = json.load(open(path, 'r'))
         self.id: str = self.json.get('id')
         self.output_dir: str = os.path.join(
-            cf.get_config().output_dir, 'Output', self.json.get('output_dir'), self.id
+            cf.get_config().output_dir,  self.json.get('output_dir'), self.id
         )
         self.dataset: _DatasetConfig = _DatasetConfig(self.json.get('dataset'))
         self.training: _TrainingConfig = _TrainingConfig(
             self.json.get('training'))
 
-    def create_output_dir(self):
+    def create_baseline_dir(self):
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
 

@@ -164,6 +164,7 @@ class _TrainingBase(_ConfigMixin, ABC):
         return _epoch, _history
 
     def train(self, override=False):
+        self.clear_output()
         if override:
             _epoch, _history = self._override()
         else:
@@ -174,7 +175,7 @@ class _TrainingBase(_ConfigMixin, ABC):
                 print('Loading Checkpoint failed, Training started from begining')
                 _epoch, _history = self._override()
 
-        self.get_bl_cf().create_output_dir()
+        self.get_bl_cf().create_baseline_dir()
         epochs = self.get_bl_cf().training.epochs
 
         for epoch in range(_epoch, epochs):
@@ -183,6 +184,7 @@ class _TrainingBase(_ConfigMixin, ABC):
 
             progress_bar = tqdm(self._get_train_loader(),
                                 desc=f"Epoch {epoch+1}/{epochs}", leave=True)
+
             for batch_idx, (inputs, labels) in enumerate(progress_bar):
                 inputs, labels = inputs.to(
                     get_device()), labels.to(get_device())

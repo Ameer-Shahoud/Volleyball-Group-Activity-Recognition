@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import numpy as np
 import torch
@@ -45,6 +46,7 @@ class _Config:
             self.json.get('dataset'), self.output_dir)
         # Seed setting for reproducibility
         self.__seed()
+        self.__create_output_dir()
 
     def __seed(self):
         """Sets the random seed for reproducibility in PyTorch, NumPy, and Python's random module."""
@@ -55,6 +57,10 @@ class _Config:
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
+
+    def __create_output_dir(self):
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
 
 class _DatasetConfig:
@@ -69,14 +75,21 @@ class _DatasetConfig:
         __videos (dict): Video IDs for training, validation, and testing.
     """
 
-    def __init__(self, dataset_json: dict, output):
+    def __init__(self, dataset_json: dict, output_dir: str):
         """Initializes the _DatasetConfig object by loading dataset settings."""
         self.root_dir: str = dataset_json.get('root_dir')
         self.videos_dir: str = f"{self.root_dir}/{dataset_json.get('videos_dir')}"
         self.tracking_boxes_annotation_dir: str = f"{self.root_dir}/{dataset_json.get('tracking_boxes_annotation_dir')}"
+        self.__output_dir: str = f"{output_dir}/Dataset"
         self.__categories: dict[str, list[str]
                                 ] = dataset_json.get('categories')
         self.__videos: dict[str, list[str]] = dataset_json.get('videos')
+
+        self.__create_output_dir()
+
+    def __create_output_dir(self):
+        if not os.path.exists(self.__output_dir):
+            os.makedirs(self.__output_dir)
 
     def get_categories(self, level: ClassificationLevel):
         """
@@ -89,6 +102,9 @@ class _DatasetConfig:
             list[str]: List of categories for the classification level.
         """
         return self.__categories.get(level.value)
+
+    def get_pkl_path(self, type: DatasetType):
+        return f"{self.__output_dir}/{type.value}.dataset.pkl"
 
     def get_videos(self, type: DatasetType):
         """

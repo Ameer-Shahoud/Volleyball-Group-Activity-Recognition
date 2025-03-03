@@ -1,6 +1,8 @@
 from abc import ABC
+import sys
 import app_config as cf
 import baseline_config as bl_cf
+from IPython.display import clear_output
 
 
 class _ConfigMixin(ABC):
@@ -13,6 +15,7 @@ class _ConfigMixin(ABC):
         get_cf(): Retrieves application configuration.
         get_bl_cf(): Retrieves baseline configuration.
     """
+
     def has_cf(self):
         return cf.is_available()
 
@@ -24,3 +27,10 @@ class _ConfigMixin(ABC):
 
     def get_bl_cf(self):
         return bl_cf.get_bl_config()
+
+    def clear_output(self):
+        if cf.get_config().is_notebook:
+            clear_output(wait=True)
+        else:
+            sys.stdout.write("\033c")
+            sys.stdout.flush()
