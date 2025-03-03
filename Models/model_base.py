@@ -15,6 +15,7 @@ class ModelBase(nn.Module, _ConfigMixin):
         base_model (nn.Module): Backbone model for feature extraction.
         classifier (nn.Linear): Custom classification layer.
     """
+
     def __init__(self, backbone: nn.Module, level: ClassificationLevel, *args, **kwargs):
         """
         Initializes the ModelBase with a pre-trained backbone.
@@ -81,4 +82,6 @@ class ModelBase(nn.Module, _ConfigMixin):
     def to_available_device(self):
         """Transfers the model to the available device (CPU or GPU)."""
         self.to(get_device())
+        self.base_model.to(get_device())
+        self.classifier.to(get_device())
         return self

@@ -67,7 +67,7 @@ class TrainingB1(_TrainingBase):
         )
 
     def _to_available_device(self):
-        self.model.to(cuda.get_device())
+        self.model.to_available_device()
         for state in self.optimizer.state.values():
             if isinstance(state, torch.Tensor):
                 state.data = state.data.to(cuda.get_device())
