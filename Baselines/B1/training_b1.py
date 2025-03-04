@@ -94,7 +94,6 @@ class TrainingB1(_TrainingBase):
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        self._to_available_device()
         return checkpoint['epoch']
 
     def _on_epoch_step(self, epoch: int):
