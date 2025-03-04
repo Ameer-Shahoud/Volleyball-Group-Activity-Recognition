@@ -81,7 +81,6 @@ class ModelBase(nn.Module, _ConfigMixin):
 
     def to_available_device(self):
         """Transfers the model to the available device (CPU or GPU)."""
-        self.to(get_device())
-        self.base_model.to(get_device())
-        self.classifier.to(get_device())
+        self.base_model = self.base_model.to(get_device())
+        self.classifier = self.classifier.to(get_device())
         return self

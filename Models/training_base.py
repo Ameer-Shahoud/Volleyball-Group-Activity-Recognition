@@ -182,7 +182,6 @@ class _TrainingBase(_ConfigMixin, ABC):
 
         self.get_bl_cf().create_baseline_dir()
         epochs = self.get_bl_cf().training.epochs
-        self._to_available_device()
 
         for epoch in range(_epoch, epochs):
             self._train_mode()
@@ -191,6 +190,7 @@ class _TrainingBase(_ConfigMixin, ABC):
             progress_bar = tqdm(self._get_train_loader(),
                                 desc=f"Epoch {epoch+1}/{epochs}", leave=True)
 
+            self._to_available_device()
             for batch_idx, (inputs, labels) in enumerate(progress_bar):
                 inputs, labels = inputs.to(
                     get_device()), labels.to(get_device())

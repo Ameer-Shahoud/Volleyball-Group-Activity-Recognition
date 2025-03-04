@@ -71,7 +71,6 @@ class TrainingB1(_TrainingBase):
         for state in self.optimizer.state.values():
             if isinstance(state, torch.Tensor):
                 state.data = state.data.to(cuda.get_device())
-        self.scheduler.st
 
     def _get_train_loader(self):
         return self.train_loader
