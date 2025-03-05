@@ -1,5 +1,6 @@
 import os
 import pickle
+from typing import Any
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
@@ -55,14 +56,14 @@ class _BaseDataset(Dataset, _ConfigMixin, ABC):
         self._flatten_dataset = self.get_flatten()
 
     @abstractmethod
-    def get_flatten(self):
+    def get_flatten(self) -> list[list['_BaseDatasetItem']]:
         pass
 
     def __len__(self):
         return len(self._flatten_dataset)
 
     @abstractmethod
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
         pass
 
     def get_video_annotations(self, video: int) -> VideoAnnotations:
@@ -70,6 +71,12 @@ class _BaseDataset(Dataset, _ConfigMixin, ABC):
 
     def get_all_videos_annotations(self):
         return self._videos_annotations.items()
+
+
+class _BaseDatasetItem(_ConfigMixin, ABC):
+    @abstractmethod
+    def to_dict(self) -> dict[str, Any]:
+        pass
 
 
 class ImageDataset(_BaseDataset):
@@ -85,28 +92,29 @@ class ImageDataset(_BaseDataset):
         """Initializes the ImageDataset by setting classification level to IMAGE."""
         super().__init__(type)
 
-    def get_flatten(self):
+    def get_flatten(self) -> list[list['ImageDatasetItem']]:
         """
         Flattens the dataset into a list of ImageDatasetItem objects.
 
         Returns:
             list[ImageDatasetItem]: Flattened list of dataset items.
         """
-        dataset: list[ImageDatasetItem] = []
+        dataset: list[list[ImageDatasetItem]] = []
         for _, v in self._videos_annotations.items():
             for __, c in v.get_all_clips_annotations():
+                items: list[ImageDatasetItem] = []
                 for frame_ID, boxes in c.get_within_range_frame_boxes():
-                    item = ImageDatasetItem(
+                    items += [ImageDatasetItem(
                         video=v.video,
                         clip=c.clip,
                         frame=frame_ID,
                         label=c.get_category(),
                         img_path=get_frame_img_path(v.video, c.clip, frame_ID)
-                    )
-                    dataset.append(item)
+                    )]
+                dataset.append(items)
         return dataset
 
-    def __getitem__(self, index):
+    def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Retrieves an item from the dataset by index.
 
@@ -116,30 +124,32 @@ class ImageDataset(_BaseDataset):
         Returns:
             tuple: A tuple containing the transformed image tensor and its label.
         """
-        item: ImageDatasetItem = self._flatten_dataset[index]
+        items: list[ImageDatasetItem] = self._flatten_dataset[index]
 
-        try:
-            img = Image.open(item.img_path).convert('RGB')
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Image not found at {item.img_path}")
+        imgs: list[torch.Tensor] = []
+        for item in items:
+            try:
+                imgs += [Image.open(item.img_path).convert('RGB')]
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Image not found at {item.img_path}")
 
-        if self.has_bl_cf():
-            img = self.get_bl_cf().dataset.preprocess.get_transforms(
-                ClassificationLevel.IMAGE, self._type
-            )(img)
-        else:
-            img = transforms.ToTensor()(img)
+        for i in range(len(imgs)):
+            if self.has_bl_cf():
+                imgs[i] = self.get_bl_cf().dataset.preprocess.get_transforms(
+                    ClassificationLevel.IMAGE, self._type
+                )(imgs[i])
+            else:
+                imgs[i] = transforms.ToTensor()(imgs[i])
 
         y_label = torch.Tensor(
             [self.get_cf().dataset.get_encoded_category(
                 ClassificationLevel.IMAGE, item.label
             )]
         ).to(torch.long)
+        return torch.cat(imgs), y_label[0]
 
-        return img, y_label[0]
 
-
-class ImageDatasetItem:
+class ImageDatasetItem(_BaseDatasetItem):
     """
     Class to organize individual dataset items for image-level classification.
 
@@ -152,13 +162,14 @@ class ImageDatasetItem:
     """
 
     def __init__(self, video: int, clip: int, frame: int, label: str, img_path: str):
+        super().__init__()
         self.video = video
         self.clip = clip
         self.frame = frame
         self.label = label
         self.img_path = img_path
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """Converts the ImageDatasetItem object to a dictionary."""
         return {
             "video": self.video,
@@ -184,6 +195,26 @@ class PlayerDataset(_BaseDataset):
         """
         super().__init__(type)
 
+    def get_flatten(self) -> list[list['PlayerDatasetItem']]:
+        dataset: list[list[PlayerDatasetItem]] = []
+        for _, v in self._videos_annotations.items():
+            for __, c in v.get_all_clips_annotations():
+                items: list[PlayerDatasetItem] = []
+                for frame_ID, boxes in c.get_within_range_frame_boxes():
+                    items += [PlayerDatasetItem(
+                        video=v.video,
+                        clip=c.clip,
+                        frame=frame_ID,
+                        label=c.get_category(),
+                        img_path=get_frame_img_path(v.video, c.clip, frame_ID)
+                    )]
+                dataset.append(items)
+        return dataset
 
-class PlayerDatasetItem:
-    pass
+    def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
+        pass
+
+
+class PlayerDatasetItem(_BaseDatasetItem):
+    def __init__(self):
+        super().__init__()
