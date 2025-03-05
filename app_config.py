@@ -85,7 +85,20 @@ class _DatasetConfig:
                                 ] = dataset_json.get('categories')
         self.__videos: dict[str, list[str]] = dataset_json.get('videos')
 
+        self.__init_encoders_decoders()
         self.__create_output_dir()
+
+    def __init_encoders_decoders(self):
+        self.__encoded_categories: dict[str, dict[str, int]] = {
+            level: {} for level in self.__categories.keys()
+        }
+        self.__decoded_categories: dict[str, dict[int, str]] = {
+            level: {} for level in self.__categories.keys()
+        }
+        for level, categories in self.__categories.items():
+            for idx, category in enumerate(categories):
+                self.__encoded_categories[level][category] = idx
+                self.__decoded_categories[level][idx] = category
 
     def __create_output_dir(self):
         if not os.path.exists(self.__output_dir):
@@ -102,6 +115,12 @@ class _DatasetConfig:
             list[str]: List of categories for the classification level.
         """
         return self.__categories.get(level.value)
+
+    def get_encoded_category(self, level: ClassificationLevel, category: str):
+        return self.__encoded_categories[level.value][category]
+
+    def get_decoded_category(self, level: ClassificationLevel, encoded_category: int):
+        return self.__decoded_categories[level.value][encoded_category]
 
     def get_pkl_path(self, type: DatasetType):
         return f"{self.__output_dir}/{type.value}.dataset.pkl"
