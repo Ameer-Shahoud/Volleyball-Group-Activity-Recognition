@@ -3,7 +3,6 @@ import pickle
 import torch
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
-from sklearn.preprocessing import LabelEncoder
 from PIL import Image
 from abc import ABC, abstractmethod
 from Enums.classification_level import ClassificationLevel
@@ -55,16 +54,14 @@ class _BaseDataset(Dataset, _ConfigMixin, ABC):
             with open(_pkl_path, "wb") as f:
                 pickle.dump(self._videos_annotations, f)
 
-        self._encoder = LabelEncoder()
-        self._encoder.fit(self.get_cf().dataset.get_categories(self._level))
+        self._flatten_dataset = self.get_flatten()
 
     @abstractmethod
     def get_flatten(self):
         pass
 
-    @abstractmethod
     def __len__(self):
-        pass
+        return len(self._flatten_dataset)
 
     @abstractmethod
     def __getitem__(self, index):
@@ -84,14 +81,13 @@ class ImageDataset(_BaseDataset):
 
     Attributes:
         _level (ClassificationLevel): Classification level set to IMAGE.
-        __flatten_dataset (list): Flattened list of ImageDatasetItem objects.
+        _flatten_dataset (list): Flattened list of ImageDatasetItem objects.
     """
 
     def __init__(self, type):
         """Initializes the ImageDataset by setting classification level to IMAGE."""
         self._level = ClassificationLevel.IMAGE
         super().__init__(type)
-        self.__flatten_dataset = self.get_flatten()
 
     def get_flatten(self):
         """
@@ -114,9 +110,6 @@ class ImageDataset(_BaseDataset):
                     dataset.append(item)
         return dataset
 
-    def __len__(self):
-        return len(self.__flatten_dataset)
-
     def __getitem__(self, index):
         """
         Retrieves an item from the dataset by index.
@@ -127,7 +120,7 @@ class ImageDataset(_BaseDataset):
         Returns:
             tuple: A tuple containing the transformed image tensor and its label.
         """
-        item: ImageDatasetItem = self.__flatten_dataset[index]
+        item: ImageDatasetItem = self._flatten_dataset[index]
 
         try:
             img = Image.open(item.img_path).convert('RGB')
@@ -141,7 +134,7 @@ class ImageDataset(_BaseDataset):
             img = transforms.ToTensor()(img)
 
         y_label = torch.Tensor(
-            self._encoder.transform([item.label])
+            [self.get_cf().dataset.get_encoded_category(self._level, item.label)]
         ).to(torch.long)
 
         return img, y_label[0]
@@ -192,7 +185,6 @@ class PlayerDataset(_BaseDataset):
         """
         self._level = ClassificationLevel.PLAYER
         super().__init__(type)
-        self.__flatten_dataset = self.get_flatten()
 
 
 class PlayerDatasetItem:
