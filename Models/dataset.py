@@ -18,12 +18,10 @@ class _BaseDataset(Dataset, _ConfigMixin, ABC):
     It manages loading video annotations and preparing data for training and evaluation.
 
     Attributes:
-        _level (ClassificationLevel): Classification level (IMAGE or PLAYER).
         _type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
         _videos (list): List of video IDs.
         _videos_annotations (dict): Dictionary of video IDs and corresponding VideoAnnotations objects.
     """
-    _level: ClassificationLevel = None
 
     def __init__(self, type: DatasetType):
         """
@@ -80,13 +78,11 @@ class ImageDataset(_BaseDataset):
     It loads images, applies transformations, and encodes labels.
 
     Attributes:
-        _level (ClassificationLevel): Classification level set to IMAGE.
         _flatten_dataset (list): Flattened list of ImageDatasetItem objects.
     """
 
     def __init__(self, type):
         """Initializes the ImageDataset by setting classification level to IMAGE."""
-        self._level = ClassificationLevel.IMAGE
         super().__init__(type)
 
     def get_flatten(self):
@@ -129,12 +125,15 @@ class ImageDataset(_BaseDataset):
 
         if self.has_bl_cf():
             img = self.get_bl_cf().dataset.preprocess.get_transforms(
-                self._level, self._type)(img)
+                ClassificationLevel.IMAGE, self._type
+            )(img)
         else:
             img = transforms.ToTensor()(img)
 
         y_label = torch.Tensor(
-            [self.get_cf().dataset.get_encoded_category(self._level, item.label)]
+            [self.get_cf().dataset.get_encoded_category(
+                ClassificationLevel.IMAGE, item.label
+            )]
         ).to(torch.long)
 
         return img, y_label[0]
@@ -183,7 +182,6 @@ class PlayerDataset(_BaseDataset):
         Args:
             type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
         """
-        self._level = ClassificationLevel.PLAYER
         super().__init__(type)
 
 
