@@ -6,7 +6,7 @@ from Models.config_mixin import _ConfigMixin
 from Utils.cuda import get_device
 
 
-class ModelBase(nn.Module, _ConfigMixin):
+class BaseModel(nn.Module, _ConfigMixin):
     """
     Base class for building custom models using pre-trained backbones.
     It wraps a pre-trained model and customizes the classifier layer for the given task.

@@ -13,7 +13,7 @@ from Models.video_annotations import VideoAnnotations
 from Utils.dataset import get_frame_img_path
 
 
-class _Dataset(Dataset, _ConfigMixin, ABC):
+class _BaseDataset(Dataset, _ConfigMixin, ABC):
     """
     Abstract base class for creating custom datasets.
     It manages loading video annotations and preparing data for training and evaluation.
@@ -77,7 +77,7 @@ class _Dataset(Dataset, _ConfigMixin, ABC):
         return self._videos_annotations.items()
 
 
-class ImageDataset(_Dataset):
+class ImageDataset(_BaseDataset):
     """
     Custom dataset for image-level classification.
     It loads images, applies transformations, and encodes labels.
@@ -177,7 +177,7 @@ class ImageDatasetItem:
         }
 
 
-class PlayerDataset(_Dataset):
+class PlayerDataset(_BaseDataset):
     """
     Placeholder class for player-level classification dataset.
     Inherits from _Dataset.
