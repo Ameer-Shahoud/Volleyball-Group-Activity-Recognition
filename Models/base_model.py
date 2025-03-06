@@ -44,16 +44,16 @@ class BaseModel(nn.Module, _ConfigMixin):
         Returns:
             torch.Tensor: Model output or feature vectors.
         """
+        batch_size, frames_count, channels, width, height = x.shape
+        x = x.view(-1, channels, width, height)
         x = x.to(get_device())
+
         features = self.base_model(x)
 
         if return_features:
-            return features.to(get_device())
+            return features.view(batch_size, frames_count, -1).to(get_device())
 
-        return self.classifier(features).to(get_device())
-
-    def train_model(self, train_loader: DataLoader, val_loader: DataLoader):
-        pass
+        return self.classifier(features).view(batch_size, frames_count, -1).to(get_device())
 
     def set_backbone_requires_grad(self, requires_grad: bool):
         """

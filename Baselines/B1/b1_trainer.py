@@ -136,7 +136,7 @@ class B1Trainer(_BaseTrainer):
 
     def _train_batch_step(self, inputs, labels):
         self.optimizer.zero_grad()
-        outputs = self.model(self.__map_inputs(inputs))
+        outputs = self.__map_outputs(self.model(inputs))
         loss = self.criterion(outputs, labels)
 
         loss.backward()
@@ -149,7 +149,7 @@ class B1Trainer(_BaseTrainer):
         self.train_total += labels.size(0)
 
     def _eval_batch_step(self, inputs, labels):
-        outputs = self.model(self.__map_inputs(inputs))
+        outputs = self.__map_outputs(self.model(inputs))
         loss = self.criterion(outputs, labels)
 
         self.val_loss += loss.item()
@@ -159,7 +159,7 @@ class B1Trainer(_BaseTrainer):
         self.val_total += labels.size(0)
 
     def _test_batch_step(self, inputs, labels):
-        outputs = self.model(self.__map_inputs(inputs))
+        outputs = self.__map_outputs(self.model(inputs))
         loss = self.criterion(outputs, labels)
 
         self.test_loss += loss.item()
@@ -173,6 +173,6 @@ class B1Trainer(_BaseTrainer):
             f"Test Results:\nLoss: {self.test_loss/len(self.test_loader):.4f}, Acc: {100 * self.test_correct/self.test_total:.2f}%"
         )
 
-    def __map_inputs(self, inputs):
-        _inputs = torch.squeeze(inputs, dim=1)
-        return _inputs
+    def __map_outputs(self, outputs):
+        batch_size, _, __ = outputs.shape
+        return outputs.view(batch_size, -1)

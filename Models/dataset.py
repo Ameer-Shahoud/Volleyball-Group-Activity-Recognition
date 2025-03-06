@@ -8,6 +8,7 @@ from PIL import Image
 from abc import ABC, abstractmethod
 from Enums.classification_level import ClassificationLevel
 from Enums.dataset_type import DatasetType
+from Models.box import BoxInfo
 from Models.config_mixin import _ConfigMixin
 from Models.video_annotations import VideoAnnotations
 from Utils.dataset import get_frame_img_path
@@ -74,9 +75,21 @@ class _BaseDataset(Dataset, _ConfigMixin, ABC):
 
 
 class _BaseDatasetItem(_ConfigMixin, ABC):
-    @abstractmethod
+    def __init__(self, video: int, clip: int, frame: int, label: str, img_path: str):
+        self.video = video
+        self.clip = clip
+        self.frame = frame
+        self.label = label
+        self.img_path = img_path
+
     def to_dict(self) -> dict[str, Any]:
-        pass
+        return {
+            "video": self.video,
+            "clip": self.clip,
+            "frame": self.frame,
+            "label": self.label,
+            "img_path": self.img_path
+        }
 
 
 class ImageDataset(_BaseDataset):
@@ -146,7 +159,7 @@ class ImageDataset(_BaseDataset):
                 ClassificationLevel.IMAGE, item.label
             )]
         ).to(torch.long)
-        return torch.cat(imgs), y_label[0]
+        return torch.stack(imgs), y_label[0]
 
 
 class ImageDatasetItem(_BaseDatasetItem):
@@ -162,22 +175,11 @@ class ImageDatasetItem(_BaseDatasetItem):
     """
 
     def __init__(self, video: int, clip: int, frame: int, label: str, img_path: str):
-        super().__init__()
-        self.video = video
-        self.clip = clip
-        self.frame = frame
-        self.label = label
-        self.img_path = img_path
+        super().__init__(video=video, clip=clip, frame=frame, label=label, img_path=img_path)
 
     def to_dict(self) -> dict[str, Any]:
         """Converts the ImageDatasetItem object to a dictionary."""
-        return {
-            "video": self.video,
-            "clip": self.clip,
-            "frame": self.frame,
-            "label": self.label,
-            "img_path": self.img_path
-        }
+        return super().to_dict()
 
 
 class PlayerDataset(_BaseDataset):
@@ -206,7 +208,8 @@ class PlayerDataset(_BaseDataset):
                         clip=c.clip,
                         frame=frame_ID,
                         label=c.get_category(),
-                        img_path=get_frame_img_path(v.video, c.clip, frame_ID)
+                        img_path=get_frame_img_path(v.video, c.clip, frame_ID),
+                        boxes=boxes
                     )]
                 dataset.append(items)
         return dataset
@@ -216,5 +219,9 @@ class PlayerDataset(_BaseDataset):
 
 
 class PlayerDatasetItem(_BaseDatasetItem):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, video: int, clip: int, frame: int, label: str, img_path: str, boxes: list[BoxInfo]):
+        super().__init__(video=video, clip=clip, frame=frame, label=label, img_path=img_path)
+        self.boxes = boxes
+
+    def to_dict(self):
+        return dict([*super().to_dict().items(), ('boxes', self.boxes)])
