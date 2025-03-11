@@ -113,6 +113,92 @@
                             }
                         }
                     ]
+                },
+                "player": {
+                    "train": [
+                        {
+                            "type": "resize",
+                            "args": {
+                                "width": 50,
+                                "height": 50
+                            }
+                        },
+                        {
+                            "type": "to_tensor",
+                            "args": null
+                        },
+                        {
+                            "type": "normalize",
+                            "args": {
+                                "mean": [
+                                    0.485,
+                                    0.456,
+                                    0.406
+                                ],
+                                "std": [
+                                    0.229,
+                                    0.224,
+                                    0.225
+                                ]
+                            }
+                        }
+                    ],
+                    "val": [
+                        {
+                            "type": "resize",
+                            "args": {
+                                "width": 50,
+                                "height": 50
+                            }
+                        },
+                        {
+                            "type": "to_tensor",
+                            "args": null
+                        },
+                        {
+                            "type": "normalize",
+                            "args": {
+                                "mean": [
+                                    0.485,
+                                    0.456,
+                                    0.406
+                                ],
+                                "std": [
+                                    0.229,
+                                    0.224,
+                                    0.225
+                                ]
+                            }
+                        }
+                    ],
+                    "test": [
+                        {
+                            "type": "resize",
+                            "args": {
+                                "width": 50,
+                                "height": 50
+                            }
+                        },
+                        {
+                            "type": "to_tensor",
+                            "args": null
+                        },
+                        {
+                            "type": "normalize",
+                            "args": {
+                                "mean": [
+                                    0.485,
+                                    0.456,
+                                    0.406
+                                ],
+                                "std": [
+                                    0.229,
+                                    0.224,
+                                    0.225
+                                ]
+                            }
+                        }
+                    ]
                 }
             }
         }

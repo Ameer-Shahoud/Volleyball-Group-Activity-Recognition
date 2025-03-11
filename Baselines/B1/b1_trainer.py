@@ -5,7 +5,7 @@ from Models.base_trainer import _BaseTrainer
 from Enums.classification_level import ClassificationLevel
 from Enums.dataset_type import DatasetType
 from Models.base_model import BaseModel
-from Models.dataset import ImageDataset
+from Models.image_dataset import ImageDataset
 from torch import nn
 from torchvision import models
 from torch.utils.data import DataLoader
@@ -46,6 +46,10 @@ class B1Trainer(_BaseTrainer):
         train_dataset = ImageDataset(type=DatasetType.TRAIN)
         val_dataset = ImageDataset(type=DatasetType.VAL)
         test_dataset = ImageDataset(type=DatasetType.TEST)
+
+        self.train_size = len(train_dataset)
+        self.val_size = len(val_dataset)
+        self.test_size = len(test_dataset)
 
         batch_size = self.get_bl_cf().training.batch_size
 
@@ -125,9 +129,9 @@ class B1Trainer(_BaseTrainer):
         )
         return B1HistoryItem(
             epoch,
-            self.train_loss / len(self.train_loader),
+            self.train_loss / self.train_size,
             100 * self.train_correct / self.train_total,
-            self.val_loss / len(self.val_loader),
+            self.val_loss / self.val_size,
             100 * self.val_correct / self.val_total,
         )
 
@@ -170,7 +174,7 @@ class B1Trainer(_BaseTrainer):
 
     def _on_test_step(self):
         print(
-            f"Test Results:\nLoss: {self.test_loss/len(self.test_loader):.4f}, Acc: {100 * self.test_correct/self.test_total:.2f}%"
+            f"Test Results:\nLoss: {self.test_loss/self.test_size:.4f}, Acc: {100 * self.test_correct/self.test_total:.2f}%"
         )
 
     def __map_outputs(self, outputs):
