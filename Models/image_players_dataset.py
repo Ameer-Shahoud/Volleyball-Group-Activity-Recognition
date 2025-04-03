@@ -43,7 +43,7 @@ class ImagePlayersDataset(_BaseDataset):
                     dataset.append(items)
         return dataset
 
-    def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
+    def __getitem__(self, index) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
         items: list[ImagePlayersDatasetItem] = self._flatten_dataset[index]
 
         img_players: list[list[tuple[torch.Tensor, str]]] = []
@@ -93,7 +93,7 @@ class ImagePlayersDataset(_BaseDataset):
             )]
         ).to(torch.long)
 
-        return torch.stack(img_players_tensors), torch.stack(label_tensors), img_label[0]
+        return torch.stack(img_players_tensors), (torch.stack(label_tensors), img_label[0])
 
 
 class ImagePlayersDatasetItem(_BaseDatasetItem):

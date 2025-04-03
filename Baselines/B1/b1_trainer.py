@@ -178,5 +178,5 @@ class B1Trainer(_BaseTrainer):
         )
 
     def __map_outputs(self, outputs):
-        batch_size, _, __ = outputs.shape
-        return outputs.view(batch_size, -1)
+        batch_size, _, __ = outputs[0].shape
+        return outputs[0].view(batch_size, -1)

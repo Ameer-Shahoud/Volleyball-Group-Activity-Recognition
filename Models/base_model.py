@@ -33,7 +33,7 @@ class BaseModel(nn.Module, _ConfigMixin):
         )
         self.base_model.fc = nn.Identity()
 
-    def forward(self, x: torch.Tensor, return_features=False):
+    def forward(self, x: torch.Tensor):
         """
         Forward pass for the model.
 
@@ -50,10 +50,7 @@ class BaseModel(nn.Module, _ConfigMixin):
 
         features = self.base_model(x)
 
-        if return_features:
-            return features.view(batch_size, frames_count, -1).to(get_device())
-
-        return self.classifier(features).view(batch_size, frames_count, -1).to(get_device())
+        return self.classifier(features).view(batch_size, frames_count, -1).to(get_device()), features.view(batch_size, frames_count, -1).to(get_device())
 
     def set_backbone_requires_grad(self, requires_grad: bool):
         """

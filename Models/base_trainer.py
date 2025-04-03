@@ -196,8 +196,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
                                 desc=f"Epoch {epoch+1}/{epochs}", leave=True)
 
             for batch_idx, (inputs, labels) in enumerate(progress_bar):
-                inputs, labels = inputs.to(
-                    get_device()), labels.to(get_device())
+                inputs, labels = self._inputs_to_device(inputs, labels)
 
                 self._train_batch_step(inputs, labels)
 
@@ -214,8 +213,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
 
         with torch.no_grad():
             for inputs, labels in self._get_val_loader():
-                inputs, labels = inputs.to(
-                    get_device()), labels.to(get_device())
+                inputs, labels = self._inputs_to_device(inputs, labels)
                 self._eval_batch_step(inputs, labels)
 
     def test(self):
@@ -225,7 +223,20 @@ class _BaseTrainer(_ConfigMixin, ABC):
 
         with torch.no_grad():
             for inputs, labels in self._get_test_loader():
-                inputs, labels = inputs.to(
-                    get_device()), labels.to(get_device())
+                inputs, labels = self._inputs_to_device(inputs, labels)
                 self._test_batch_step(inputs, labels)
             self._on_test_step()
+
+    def _inputs_to_device(self, inputs, labels):
+        if isinstance(inputs, (tuple, list)):
+            inputs = tuple([_input.to(get_device())
+                            for _input in inputs])
+        else:
+            inputs = inputs.to(get_device())
+        if isinstance(labels, (tuple, list)):
+            labels = tuple([_label.to(get_device())
+                            for _label in labels])
+        else:
+            labels = labels.to(get_device())
+
+        return inputs, labels
