@@ -210,7 +210,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
         self._to_available_device()
 
         with torch.no_grad():
-            for inputs, labels in self.test_loader():
+            for inputs, labels in self.test_loader:
                 inputs, labels = self._inputs_to_device(inputs, labels)
                 self._test_batch_step(inputs, labels)
             self._on_test_step()
