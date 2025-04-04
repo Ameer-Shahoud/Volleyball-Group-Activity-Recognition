@@ -1,14 +1,13 @@
+from typing import Type
 import torch
 from Baselines.B1.b1_checkpoint import B1Checkpoint
 from Baselines.B1.b1_history import B1History, B1HistoryItem
 from Models.base_trainer import _BaseTrainer
 from Enums.classification_level import ClassificationLevel
-from Enums.dataset_type import DatasetType
 from Models.base_model import BaseModel
 from Models.image_dataset import ImageDataset
 from torch import nn
 from torchvision import models
-from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from Utils.cuda import get_device
@@ -42,23 +41,8 @@ class B1Trainer(_BaseTrainer):
         self.val_loss, self.val_correct, self.val_total = 0.0, 0, 0
         self.test_loss, self.test_correct, self.test_total = 0.0, 0, 0
 
-    def _prepare_loaders(self):
-        train_dataset = ImageDataset(type=DatasetType.TRAIN)
-        val_dataset = ImageDataset(type=DatasetType.VAL)
-        test_dataset = ImageDataset(type=DatasetType.TEST)
-
-        self.train_size = len(train_dataset)
-        self.val_size = len(val_dataset)
-        self.test_size = len(test_dataset)
-
-        batch_size = self.get_bl_cf().training.batch_size
-
-        self.train_loader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True)
-        self.val_loader = DataLoader(
-            val_dataset, batch_size=batch_size, shuffle=False)
-        self.test_loader = DataLoader(
-            test_dataset, batch_size=batch_size, shuffle=False)
+    def _get_dataset_type(self) -> Type[ImageDataset]:
+        return ImageDataset
 
     def _prepare_model(self):
         self.model = BaseModel(
@@ -97,15 +81,6 @@ class B1Trainer(_BaseTrainer):
 
     def _get_history(self, history_path: str = None) -> B1History:
         return B1History(history_path)
-
-    def _get_train_loader(self):
-        return self.train_loader
-
-    def _get_val_loader(self):
-        return self.val_loader
-
-    def _get_test_loader(self):
-        return self.test_loader
 
     def _train_mode(self):
         self.model.train()

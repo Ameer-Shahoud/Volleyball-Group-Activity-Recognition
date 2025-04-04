@@ -9,13 +9,16 @@ class _BaseHistory(_ConfigMixin, ABC):
     def __init__(
         self,
         input_path: str = None,
+        suffix: str = None
     ):
         self._input_path = input_path if input_path else os.path.join(
-            self.get_bl_cf().output_dir, 'history.pkl'
+            self.get_bl_cf().output_dir,
+            f'history.{suffix}.pkl' if suffix else 'history.pkl'
         )
 
         self._output_path = os.path.join(
-            self.get_bl_cf().output_dir, 'history.pkl'
+            self.get_bl_cf().output_dir,
+            f'history.{suffix}.pkl' if suffix else 'history.pkl'
         )
 
         self._history_list: list[_BaseHistoryItem] = []

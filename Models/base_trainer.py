@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 import os
+from typing import Type
 import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from Enums.dataset_type import DatasetType
 from Models.base_checkpoint import _BaseCheckpoint
+from Models.base_dataset import _BaseDataset
 from Models.config_mixin import _ConfigMixin
 from Models.base_history import _BaseHistory, _BaseHistoryItem
 from Utils.cuda import get_device
@@ -15,7 +18,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
     It provides a consistent workflow for training, evaluation, and testing.
     """
 
-    def __init__(self, checkpoint_path: str = None, history_path: str = None):
+    def __init__(self, checkpoint_path: str = None, history_path: str = None, suffix: str = None):
         """Initializes the training pipeline by preparing loaders, model, and optimizer."""
         self._init_values()
         self._prepare_loaders()
@@ -26,20 +29,35 @@ class _BaseTrainer(_ConfigMixin, ABC):
         self._checkpoint = self._get_checkpoint(checkpoint_path)
         self._history = self._get_history(history_path)
         self._model_path = os.path.join(
-            self.get_bl_cf().output_dir, 'model.pth')
+            self.get_bl_cf().output_dir,
+            f'model.{suffix}.pth' if suffix else 'model.pth'
+        )
 
     @abstractmethod
     def _init_values(self) -> None:
         pass
 
     @abstractmethod
-    def _prepare_loaders(self) -> None:
-        """
-        Prepares DataLoaders for training, validation, and testing.
-
-        - Loads ImageDataset for train, val, and test sets.
-        - Initializes DataLoaders with the configured batch size."""
+    def _get_dataset_type(self) -> Type[_BaseDataset]:
         pass
+
+    def _prepare_loaders(self) -> None:
+        train_dataset = self._get_dataset_type()(type=DatasetType.TRAIN)
+        val_dataset = self._get_dataset_type()(type=DatasetType.VAL)
+        test_dataset = self._get_dataset_type()(type=DatasetType.TEST)
+
+        self.train_size = len(train_dataset)
+        self.val_size = len(val_dataset)
+        self.test_size = len(test_dataset)
+
+        batch_size = self.get_bl_cf().training.batch_size
+
+        self.train_loader = DataLoader(
+            train_dataset, batch_size=batch_size, shuffle=True)
+        self.val_loader = DataLoader(
+            val_dataset, batch_size=batch_size, shuffle=False)
+        self.test_loader = DataLoader(
+            test_dataset, batch_size=batch_size, shuffle=False)
 
     @abstractmethod
     def _prepare_model(self) -> None:
@@ -63,36 +81,6 @@ class _BaseTrainer(_ConfigMixin, ABC):
 
     @abstractmethod
     def _get_history(self, history_path: str = None) -> _BaseHistory:
-        pass
-
-    @abstractmethod
-    def _get_train_loader(self) -> DataLoader:
-        """
-        Retrieves the DataLoader for training data.
-
-        Returns:
-            DataLoader: DataLoader for training data.
-        """
-        pass
-
-    @abstractmethod
-    def _get_val_loader(self) -> DataLoader:
-        """
-        Retrieves the DataLoader for validation data.
-
-        Returns:
-            DataLoader: DataLoader for validation data.
-        """
-        pass
-
-    @abstractmethod
-    def _get_test_loader(self) -> DataLoader:
-        """
-        Retrieves the DataLoader for testing data.
-
-        Returns:
-            DataLoader: DataLoader for testing data.
-        """
         pass
 
     @abstractmethod
@@ -192,7 +180,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
         for epoch in range(self._checkpoint.epoch, epochs):
             self._train_mode()
 
-            progress_bar = tqdm(self._get_train_loader(),
+            progress_bar = tqdm(self.train_loader,
                                 desc=f"Epoch {epoch+1}/{epochs}", leave=True)
 
             for batch_idx, (inputs, labels) in enumerate(progress_bar):
@@ -212,7 +200,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
         self._eval_mode()
 
         with torch.no_grad():
-            for inputs, labels in self._get_val_loader():
+            for inputs, labels in self.val_loader:
                 inputs, labels = self._inputs_to_device(inputs, labels)
                 self._eval_batch_step(inputs, labels)
 
@@ -222,7 +210,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
         self._to_available_device()
 
         with torch.no_grad():
-            for inputs, labels in self._get_test_loader():
+            for inputs, labels in self.test_loader():
                 inputs, labels = self._inputs_to_device(inputs, labels)
                 self._test_batch_step(inputs, labels)
             self._on_test_step()

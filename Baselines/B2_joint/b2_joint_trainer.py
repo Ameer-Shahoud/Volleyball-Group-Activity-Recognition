@@ -1,15 +1,14 @@
+from typing import Type
 import torch
 from Baselines.B2_joint.b2_joint_checkpoint import B2JointCheckpoint
 from Baselines.B2_joint.b2_joint_history import B2JointHistory, B2JointHistoryItem
 from Models.base_trainer import _BaseTrainer
 from Enums.classification_level import ClassificationLevel
-from Enums.dataset_type import DatasetType
 from Models.base_model import BaseModel
 from Models.custom_max_pool import CustomMaxPool
 from Models.image_players_dataset import ImagePlayersDataset
 from torch import nn
 from torchvision import models
-from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from Utils.cuda import get_device
@@ -28,23 +27,8 @@ class B2JointTrainer(_BaseTrainer):
         self.img_val_loss, self.img_val_correct, self.img_val_total = 0.0, 0, 0
         self.img_test_loss, self.img_test_correct, self.img_test_total = 0.0, 0, 0
 
-    def _prepare_loaders(self):
-        train_dataset = ImagePlayersDataset(type=DatasetType.TRAIN)
-        val_dataset = ImagePlayersDataset(type=DatasetType.VAL)
-        test_dataset = ImagePlayersDataset(type=DatasetType.TEST)
-
-        self.train_size = len(train_dataset)
-        self.val_size = len(val_dataset)
-        self.test_size = len(test_dataset)
-
-        batch_size = self.get_bl_cf().training.batch_size
-
-        self.train_loader = DataLoader(
-            train_dataset, batch_size=batch_size, shuffle=True)
-        self.val_loader = DataLoader(
-            val_dataset, batch_size=batch_size, shuffle=False)
-        self.test_loader = DataLoader(
-            test_dataset, batch_size=batch_size, shuffle=False)
+    def _get_dataset_type(self) -> Type[ImagePlayersDataset]:
+        return ImagePlayersDataset
 
     def _prepare_model(self):
         self.player_model = BaseModel(
@@ -112,15 +96,6 @@ class B2JointTrainer(_BaseTrainer):
     def _get_history(self, history_path: str = None) -> B2JointHistory:
         return B2JointHistory(history_path)
 
-    def _get_train_loader(self):
-        return self.train_loader
-
-    def _get_val_loader(self):
-        return self.val_loader
-
-    def _get_test_loader(self):
-        return self.test_loader
-
     def _train_mode(self):
         self.player_model.train()
         self.img_head_model.train()
@@ -174,23 +149,8 @@ class B2JointTrainer(_BaseTrainer):
         )
 
     def _train_batch_step(self, inputs, labels):
-        player_labels = labels[0]
-        img_labels = labels[1]
-
-        batch_size, frames_count, players_count, channels, width, height = inputs.shape
-        inputs_view = inputs.view(
-            batch_size*players_count, frames_count, channels, width, height
-        )
-
-        player_outputs, player_features = self.player_model(inputs_view)
-        player_outputs = player_outputs.view(batch_size*players_count, -1)
-        player_labels = player_labels.view(-1)
-        player_loss = self.player_criterion(
-            player_outputs, player_labels) / players_count
-
-        player_features = player_features.view(batch_size, players_count, -1)
-        img_outputs = self.img_head_model(player_features)
-        img_loss = self.img_criterion(img_outputs, img_labels)
+        player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss = self.__get_outputs(
+            inputs, labels)
 
         total_loss = player_loss + img_loss
 
@@ -212,23 +172,8 @@ class B2JointTrainer(_BaseTrainer):
         self.img_train_total += img_labels.size(0)
 
     def _eval_batch_step(self, inputs, labels):
-        player_labels = labels[0]
-        img_labels = labels[1]
-
-        batch_size, frames_count, players_count, channels, width, height = inputs.shape
-        inputs_view = inputs.view(
-            batch_size*players_count, frames_count, channels, width, height
-        )
-
-        player_outputs, player_features = self.player_model(inputs_view)
-        player_outputs = player_outputs.view(batch_size*players_count, -1)
-        player_labels = player_labels.view(-1)
-        player_loss = self.player_criterion(
-            player_outputs, player_labels) / players_count
-
-        player_features = player_features.view(batch_size, players_count, -1)
-        img_outputs = self.img_head_model(player_features)
-        img_loss = self.img_criterion(img_outputs, img_labels)
+        player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss = self.__get_outputs(
+            inputs, labels)
 
         self.player_val_loss += player_loss.item()
         _, player_predicted = player_outputs.max(1)
@@ -242,23 +187,8 @@ class B2JointTrainer(_BaseTrainer):
         self.img_val_total += img_labels.size(0)
 
     def _test_batch_step(self, inputs, labels):
-        player_labels = labels[0]
-        img_labels = labels[1]
-
-        batch_size, frames_count, players_count, channels, width, height = inputs.shape
-        inputs_view = inputs.view(
-            batch_size*players_count, frames_count, channels, width, height
-        )
-
-        player_outputs, player_features = self.player_model(inputs_view)
-        player_outputs = player_outputs.view(batch_size*players_count, -1)
-        player_labels = player_labels.view(-1)
-        player_loss = self.player_criterion(
-            player_outputs, player_labels) / players_count
-
-        player_features = player_features.view(batch_size, players_count, -1)
-        img_outputs = self.img_head_model(player_features)
-        img_loss = self.img_criterion(img_outputs, img_labels)
+        player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss = self.__get_outputs(
+            inputs, labels)
 
         self.player_test_loss += player_loss.item()
         _, player_predicted = player_outputs.max(1)
@@ -279,7 +209,23 @@ class B2JointTrainer(_BaseTrainer):
             """
         )
 
-    def __map_outputs(self, outputs):
-        pass
-        # batch_size, _, __ = outputs.shape
-        # return outputs.view(batch_size, -1)
+    def __get_outputs(self, inputs, labels):
+        player_labels = labels[0]
+        img_labels = labels[1]
+
+        batch_size, frames_count, players_count, channels, width, height = inputs.shape
+        inputs_view = inputs.view(
+            batch_size*players_count, frames_count, channels, width, height
+        )
+
+        player_outputs, player_features = self.player_model(inputs_view)
+        player_outputs = player_outputs.view(batch_size*players_count, -1)
+        player_labels = player_labels.view(-1)
+        player_loss = self.player_criterion(
+            player_outputs, player_labels) / players_count
+
+        player_features = player_features.view(batch_size, players_count, -1)
+        img_outputs = self.img_head_model(player_features)
+        img_loss = self.img_criterion(img_outputs, img_labels)
+
+        return player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss

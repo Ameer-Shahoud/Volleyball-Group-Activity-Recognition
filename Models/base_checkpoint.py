@@ -10,12 +10,14 @@ from Utils import cuda
 
 
 class _BaseCheckpoint(_ConfigMixin, ABC):
-    def __init__(self, input_path: str = None, epoch=0, **custom_state):
+    def __init__(self, input_path: str = None, suffix: str = None, epoch=0, **custom_state):
         self._input_path = input_path if input_path else os.path.join(
-            self.get_bl_cf().output_dir, 'checkpoint.pth'
+            self.get_bl_cf().output_dir,
+            f'checkpoint.{suffix}.pth' if suffix else 'checkpoint.pth'
         )
         self._output_path = os.path.join(
-            self.get_bl_cf().output_dir, 'checkpoint.pth'
+            self.get_bl_cf().output_dir,
+            f'checkpoint.{suffix}.pth' if suffix else 'checkpoint.pth'
         )
         self.epoch = epoch
         self._initial_state = {'epoch': epoch, **custom_state}
