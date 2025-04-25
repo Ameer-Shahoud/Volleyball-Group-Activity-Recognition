@@ -1,7 +1,7 @@
 {
     "id": "B2_joint",
     "description": "This Baseline finetuned ResNet50 to classify the whole image or frame according to each player class bla bla bla...",
-    "output_dir": "B2_joint",
+    "output_dir": "B2",
     "dataset": {
         "past_frames_count": 0,
         "post_frames_count": 0,

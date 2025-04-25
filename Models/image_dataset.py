@@ -9,25 +9,10 @@ from Utils.dataset import get_frame_img_path
 
 
 class ImageDataset(_BaseDataset):
-    """
-    Custom dataset for image-level classification.
-    It loads images, applies transformations, and encodes labels.
-
-    Attributes:
-        _flatten_dataset (list): Flattened list of ImageDatasetItem objects.
-    """
-
     def __init__(self, type: DatasetType):
-        """Initializes the ImageDataset by setting classification level to IMAGE."""
         super().__init__(type)
 
     def get_flatten(self) -> list[list['ImageDatasetItem']]:
-        """
-        Flattens the dataset into a list of ImageDatasetItem objects.
-
-        Returns:
-            list[ImageDatasetItem]: Flattened list of dataset items.
-        """
         dataset: list[list[ImageDatasetItem]] = []
         for _, v in self._videos_annotations.items():
             for __, c in v.get_all_clips_annotations():
@@ -44,15 +29,6 @@ class ImageDataset(_BaseDataset):
         return dataset
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Retrieves an item from the dataset by index.
-
-        Args:
-            index (int): Index of the item.
-
-        Returns:
-            tuple: A tuple containing the transformed image tensor and its label.
-        """
         items: list[ImageDatasetItem] = self._flatten_dataset[index]
 
         imgs: list[torch.Tensor] = []
@@ -79,21 +55,9 @@ class ImageDataset(_BaseDataset):
 
 
 class ImageDatasetItem(_BaseDatasetItem):
-    """
-    Class to organize individual dataset items for image-level classification.
-
-    Attributes:
-        video (int): Video ID.
-        clip (int): Clip ID within the video.
-        frame (int): Frame ID within the clip.
-        label (str): Action label for the image.
-        img_path (str): Path to the image file.
-    """
-
     def __init__(self, video: int, clip: int, frame: int, img_path: str, label: str):
         super().__init__(video=video, clip=clip, frame=frame, img_path=img_path)
         self.label = label
 
     def to_dict(self) -> dict[str, Any]:
-        """Converts the ImageDatasetItem object to a dictionary."""
         return super().to_dict(dict([*super().to_dict().items(), ('label', self.label)]))

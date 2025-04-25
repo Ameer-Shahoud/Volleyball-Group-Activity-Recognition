@@ -1,14 +1,10 @@
 from typing import Type
 import torch
-from Baselines.B2_joint.b2_joint_checkpoint import B2JointCheckpoint
 from Baselines.B2_joint.b2_joint_history import B2JointHistory, B2JointHistoryItem
+from Baselines.B2_joint.b2_joint_model import B2JointModel
 from Models.base_trainer import _BaseTrainer
-from Enums.classification_level import ClassificationLevel
-from Models.base_model import BaseModel
-from Models.custom_max_pool import CustomMaxPool
 from Models.image_players_dataset import ImagePlayersDataset
 from torch import nn
-from torchvision import models
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 from Utils.cuda import get_device
@@ -30,103 +26,37 @@ class B2JointTrainer(_BaseTrainer):
     def _get_dataset_type(self) -> Type[ImagePlayersDataset]:
         return ImagePlayersDataset
 
-    def _prepare_model(self):
-        self.player_model = BaseModel(
-            backbone=models.resnet50(weights=models.ResNet50_Weights.DEFAULT),
-            level=ClassificationLevel.PLAYER
-        ).set_backbone_requires_grad(False) \
-            .set_backbone_layer_requires_grad('layer4', True) \
-            .set_backbone_layer_requires_grad('fc', True)
+    def _get_model(self) -> B2JointModel:
+        return B2JointModel()
 
-        self.img_head_model = nn.Sequential(
-            CustomMaxPool(dim=1),
-            nn.Linear(2048, 512),
-            nn.ReLU(),
-            nn.Linear(
-                512,
-                len(
-                    self.get_cf().dataset.get_categories(ClassificationLevel.IMAGE)
-                )
-            )
-        )
+    def get_criterions(self) -> list[nn.Module]:
+        return [nn.CrossEntropyLoss(), nn.CrossEntropyLoss()]
 
-    def _prepare_optimizer(self):
-        self.player_criterion = nn.CrossEntropyLoss()
-        self.img_criterion = nn.CrossEntropyLoss()
-        self.player_optimizer = optim.Adam(
-            (p for p in self.player_model.parameters() if p.requires_grad),
+    def get_optimizers(self) -> list[torch.optim.Optimizer]:
+        model: B2JointModel = self._model
+        return [optim.Adam(
+            (p for p in model.player_base.parameters() if p.requires_grad),
             lr=self.get_bl_cf().training.learning_rate
-        )
-        self.img_optimizer = optim.Adam(
-            self.img_head_model.parameters(), lr=self.get_bl_cf().training.learning_rate
-        )
-        self.player_scheduler = lr_scheduler.ReduceLROnPlateau(
-            self.player_optimizer, mode='min', factor=0.1, patience=2
-        )
-        self.img_scheduler = lr_scheduler.ReduceLROnPlateau(
-            self.img_optimizer, mode='min', factor=0.1, patience=2
-        )
+        ), optim.Adam(
+            model.img_head.parameters(), lr=self.get_bl_cf().training.learning_rate
+        )]
 
-    def _to_available_device(self):
-        self.player_model.to_available_device()
-        self.img_head_model.to(get_device())
-
-        self.player_criterion.to(get_device())
-        self.img_criterion.to(get_device())
-
-        for state in self.player_optimizer.state.values():
-            if isinstance(state, torch.Tensor):
-                state.data = state.data.to(get_device())
-        for state in self.img_optimizer.state.values():
-            if isinstance(state, torch.Tensor):
-                state.data = state.data.to(get_device())
-
-    def _get_checkpoint(self, checkpoint_path: str = None) -> B2JointCheckpoint:
-        return B2JointCheckpoint(
-            input_path=checkpoint_path,
-            epoch=0,
-            player_model_state=self.player_model.state_dict(),
-            img_model_state=self.img_head_model.state_dict(),
-            player_optimizer_state=self.player_optimizer.state_dict(),
-            img_optimizer_state=self.img_optimizer.state_dict(),
-            player_scheduler_state=self.player_scheduler.state_dict(),
-            img_scheduler_state=self.img_scheduler.state_dict(),
-        )
+    def get_schedulers(self) -> list[lr_scheduler.LRScheduler]:
+        return [lr_scheduler.ReduceLROnPlateau(
+            self._optimizers[0], mode='min', factor=0.1, patience=2
+        ), lr_scheduler.ReduceLROnPlateau(
+            self._optimizers[1], mode='min', factor=0.1, patience=2
+        )]
 
     def _get_history(self, history_path: str = None) -> B2JointHistory:
         return B2JointHistory(history_path)
 
-    def _train_mode(self):
-        self.player_model.train()
-        self.img_head_model.train()
-
-    def _eval_mode(self):
-        self.player_model.eval()
-        self.img_head_model.eval()
-
-    def _on_checkpoint_load(self) -> int:
-        checkpoint: B2JointCheckpoint = self._checkpoint
-        self.player_model.load_state_dict(checkpoint.player_model_state)
-        self.img_head_model.load_state_dict(checkpoint.img_model_state)
-        self.player_optimizer.load_state_dict(
-            checkpoint.player_optimizer_state)
-        self.img_optimizer.load_state_dict(checkpoint.img_optimizer_state)
-        self.player_scheduler.load_state_dict(
-            checkpoint.player_scheduler_state)
-        self.img_scheduler.load_state_dict(checkpoint.img_scheduler_state)
-
     def _on_epoch_step(self, epoch: int):
-        self.player_scheduler.step(self.player_val_loss)
-        self.img_scheduler.step(self.img_val_loss)
-        self._checkpoint.update_state(
-            epoch=epoch,
-            player_model_state=self.player_model.state_dict(),
-            img_model_state=self.img_head_model.state_dict(),
-            player_optimizer_state=self.player_optimizer.state_dict(),
-            img_optimizer_state=self.img_optimizer.state_dict(),
-            player_scheduler_state=self.player_scheduler.state_dict(),
-            img_scheduler_state=self.img_scheduler.state_dict(),
-        )
+        super()._on_epoch_step(epoch)
+
+        self._schedulers[0].step(self.player_val_loss)
+        self._schedulers[1].step(self.img_val_loss)
+
         return B2JointHistoryItem(
             epoch,
             self.player_train_loss / self.player_train_loss,
@@ -139,26 +69,15 @@ class B2JointTrainer(_BaseTrainer):
             100 * self.img_val_correct / self.img_val_total,
         )
 
-    def _save_trained_model(self):
-        torch.save(
-            {
-                'player_model': self.player_model,
-                'img_head_model': self.img_head_model
-            },
-            self._model_path
-        )
-
     def _train_batch_step(self, inputs, labels):
         player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss = self.__get_outputs(
             inputs, labels)
 
         total_loss = player_loss + img_loss
 
-        self.player_optimizer.zero_grad()
-        self.img_optimizer.zero_grad()
+        [o.zero_grad() for o in self._optimizers]
         total_loss.backward()
-        self.player_optimizer.step()
-        self.img_optimizer.step()
+        [o.step() for o in self._optimizers]
 
         self.player_train_loss += player_loss.item()
         _, player_predicted = player_outputs.max(1)
@@ -213,19 +132,16 @@ class B2JointTrainer(_BaseTrainer):
         player_labels = labels[0]
         img_labels = labels[1]
 
-        batch_size, frames_count, players_count, channels, width, height = inputs.shape
-        inputs_view = inputs.view(
-            batch_size*players_count, frames_count, channels, width, height
-        )
+        player_outputs, img_outputs = self._model(inputs)
 
-        player_outputs, player_features = self.player_model(inputs_view)
+        batch_size,  players_count = inputs.shape[0], inputs.shape[2]
+
         player_outputs = player_outputs.view(batch_size*players_count, -1)
         player_labels = player_labels.view(-1)
-        player_loss = self.player_criterion(
-            player_outputs, player_labels) / players_count
+        player_loss = self._criterions[0](
+            player_outputs, player_labels
+        ) / players_count
 
-        player_features = player_features.view(batch_size, players_count, -1)
-        img_outputs = self.img_head_model(player_features)
-        img_loss = self.img_criterion(img_outputs, img_labels)
+        img_loss = self._criterions[1](img_outputs, img_labels)
 
         return player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss

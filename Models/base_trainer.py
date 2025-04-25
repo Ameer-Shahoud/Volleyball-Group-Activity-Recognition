@@ -2,36 +2,36 @@ from abc import ABC, abstractmethod
 import os
 from typing import Type
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from Enums.dataset_type import DatasetType
 from Models.base_checkpoint import _BaseCheckpoint
 from Models.base_dataset import _BaseDataset
+from Models.base_model import _BaseModel
+from Models.checkpoint import Checkpoint
 from Models.config_mixin import _ConfigMixin
 from Models.base_history import _BaseHistory, _BaseHistoryItem
 from Utils.cuda import get_device
 
 
 class _BaseTrainer(_ConfigMixin, ABC):
-    """
-    Abstract base class for training pipelines.
-    It provides a consistent workflow for training, evaluation, and testing.
-    """
-
     def __init__(self, checkpoint_path: str = None, history_path: str = None, suffix: str = None):
-        """Initializes the training pipeline by preparing loaders, model, and optimizer."""
         self._init_values()
         self._prepare_loaders()
-        self._prepare_model()
-        self._prepare_optimizer()
-        self._to_available_device()
 
+        self._model = self._get_model()
+        self._criterions = self.get_criterions()
+        self._optimizers = self.get_optimizers()
+        self._schedulers = self.get_schedulers()
         self._checkpoint = self._get_checkpoint(checkpoint_path)
         self._history = self._get_history(history_path)
         self._model_path = os.path.join(
             self.get_bl_cf().output_dir,
             f'model.{suffix}.pth' if suffix else 'model.pth'
         )
+
+        self._to_available_device()
 
     @abstractmethod
     def _init_values(self) -> None:
@@ -60,102 +60,102 @@ class _BaseTrainer(_ConfigMixin, ABC):
             test_dataset, batch_size=batch_size, shuffle=False)
 
     @abstractmethod
-    def _prepare_model(self) -> None:
-        """
-        Prepares model for training."""
+    def _get_model(self) -> _BaseModel:
         pass
 
-    @abstractmethod
-    def _prepare_optimizer(self) -> None:
-        """
-        Prepares optimizer and configure it."""
-        pass
+    def get_criterions(self) -> list[nn.Module]:
+        return [nn.CrossEntropyLoss()]
 
-    @abstractmethod
-    def _to_available_device(self) -> None:
-        pass
+    def get_optimizers(self) -> list[torch.optim.Optimizer]:
+        return [torch.optim.Adam(
+            (p for p in self._model.parameters() if p.requires_grad),
+            lr=self.get_bl_cf().training.learning_rate
+        )]
 
-    @abstractmethod
+    def get_schedulers(self) -> list[torch.optim.lr_scheduler.LRScheduler]:
+        return [torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self._optimizers[0], mode='min', factor=0.1, patience=2
+        )]
+
     def _get_checkpoint(self, checkpoint_path: str = None) -> _BaseCheckpoint:
-        pass
+        return Checkpoint(
+            input_path=checkpoint_path,
+            epoch=0,
+            model_state=self._model.state_dict(),
+            criterions_state=list(
+                map(lambda c: c.state_dict(), self._criterions)
+            ),
+            optimizers_state=list(
+                map(lambda o: o.state_dict(), self._optimizers)
+            ),
+            schedulers_state=list(
+                map(lambda s: s.state_dict(), self._schedulers)
+            ),
+        )
 
     @abstractmethod
     def _get_history(self, history_path: str = None) -> _BaseHistory:
         pass
 
-    @abstractmethod
-    def _train_mode(self) -> None:
-        """Sets baseline model to training mode."""
-        pass
+    def _to_available_device(self) -> None:
+        self._model.to(get_device())
+        [criterion.to(get_device()) for criterion in self._criterions]
+        for optimizer in self._optimizers:
+            for state in optimizer.state.values():
+                if isinstance(state, torch.Tensor):
+                    state.data = state.data.to(get_device())
 
-    @abstractmethod
+    def _on_checkpoint_load(self) -> None:
+        checkpoint: Checkpoint = self._checkpoint
+        self._model.load_state_dict(checkpoint.model_state)
+        [self._criterions[i].load_state_dict(
+            checkpoint.criterions_state[i]) for i in range(len(self._criterions))]
+        [self._optimizers[i].load_state_dict(
+            checkpoint.optimizers_state[i]) for i in range(len(self._optimizers))]
+        [self._schedulers[i].load_state_dict(
+            checkpoint.schedulers_state[i]) for i in range(len(self._schedulers))]
+
+    def _train_mode(self) -> None:
+        self._model.train()
+        [criterion.train() for criterion in self._criterions]
+
     def _eval_mode(self) -> None:
-        """Sets baseline model to evaluation mode."""
-        pass
+        self._model.eval()
+        [criterion.eval() for criterion in self._criterions]
 
     @abstractmethod
     def _train_batch_step(self, inputs, labels) -> None:
-        """
-        Defines a single training step.
-
-        - Clears the gradients.
-        - Performs a forward pass to get predictions.
-        - Computes the loss.
-        - Backpropagates the loss and updates model weights.
-        - Calculates training accuracy.
-
-        Args:
-            inputs (torch.Tensor): Input images.
-            labels (torch.Tensor): Ground truth labels.
-        """
         pass
 
     @abstractmethod
     def _eval_batch_step(self, inputs, labels) -> None:
-        """
-        Defines a single evaluation step.
-
-        - Performs a forward pass to get predictions.
-        - Computes the loss.
-        - Calculates validation accuracy.
-
-        Args:
-            inputs (torch.Tensor): Input images.
-            labels (torch.Tensor): Ground truth labels.
-        """
-        pass
-
-    @abstractmethod
-    def _on_epoch_step(self, epoch: int) -> _BaseHistoryItem:
-        """A callback function emitted after each epoch."""
         pass
 
     @abstractmethod
     def _test_batch_step(self, inputs, labels) -> None:
-        """
-        Defines a single testing step.
-
-        - Performs a forward pass to get predictions.
-        - Computes the loss.
-        - Calculates test accuracy.
-
-        Args:
-            inputs (torch.Tensor): Input images.
-            labels (torch.Tensor): Ground truth labels.
-        """
         pass
+
+    def _on_epoch_step(self, epoch: int) -> _BaseHistoryItem:
+        self._checkpoint.update_state(
+            epoch=epoch,
+            model_state=self._model.state_dict(),
+            criterions_state=list(
+                map(lambda c: c.state_dict(), self._criterions)
+            ),
+            optimizers_state=list(
+                map(lambda o: o.state_dict(), self._optimizers)
+            ),
+            schedulers_state=list(
+                map(lambda s: s.state_dict(), self._schedulers)
+            ),
+        )
 
     @abstractmethod
     def _on_test_step(self) -> None:
         pass
 
-    @abstractmethod
-    def _on_checkpoint_load(self) -> int:
-        pass
-
-    @abstractmethod
-    def _save_trained_model(self):
-        pass
+    def _save_trained_model(self) -> None:
+        torch.save(self._model, self._model_path)
 
     def train(self, override=False):
         self.get_bl_cf().create_baseline_dir()

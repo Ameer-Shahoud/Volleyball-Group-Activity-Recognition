@@ -9,18 +9,7 @@ from Utils.dataset import get_frame_img_path
 
 
 class ImagePlayersDataset(_BaseDataset):
-    """
-    Placeholder class for player-level classification dataset.
-    Inherits from _Dataset.
-    """
-
     def __init__(self, type: DatasetType):
-        """
-        Initializes the ImagePlayersDataset by setting classification level to PLAYER.
-
-        Args:
-            type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
-        """
         super().__init__(type)
 
     def get_flatten(self) -> list[list['ImagePlayersDatasetItem']]:

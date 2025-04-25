@@ -11,23 +11,7 @@ from Utils.dataset import get_frame_img_path
 
 
 class _BaseDataset(Dataset, _ConfigMixin, ABC):
-    """
-    Abstract base class for creating custom datasets.
-    It manages loading video annotations and preparing data for training and evaluation.
-
-    Attributes:
-        _type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
-        _videos (list): List of video IDs.
-        _videos_annotations (dict): Dictionary of video IDs and corresponding VideoAnnotations objects.
-    """
-
     def __init__(self, type: DatasetType):
-        """
-        Initializes the dataset by loading video annotations and configurations.
-
-        Args:
-            type (DatasetType): Type of dataset (TRAIN, VAL, TEST).
-        """
         self._type = type
         self._videos = self.get_cf().dataset.get_videos(type)
         self._videos_annotations: dict[int, VideoAnnotations] = {}

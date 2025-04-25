@@ -1,5 +1,5 @@
 {
-    "id": "B1_first",
+    "id": "B1",
     "description": "This Baseline finetuned ResNet50 to classify the whole image or frame bla bla bla...",
     "output_dir": "B1",
     "dataset": {
