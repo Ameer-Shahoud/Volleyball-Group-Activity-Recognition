@@ -11,7 +11,7 @@ from Models.custom_max_pool import CustomMaxPool
 class B2JointModel(_BaseModel):
     def __init__(self):
         super().__init__()
-        self.player_base = BackboneModel(level=ClassificationLevel.IMAGE) \
+        self.player_base = BackboneModel(level=ClassificationLevel.PLAYER) \
             .set_backbone_requires_grad(False) \
             .set_backbone_layer_requires_grad('layer4', True) \
             .set_backbone_layer_requires_grad('fc', True)
