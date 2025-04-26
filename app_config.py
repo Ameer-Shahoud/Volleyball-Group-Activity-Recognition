@@ -51,9 +51,12 @@ class _Config:
     def __seed(self):
         """Sets the random seed for reproducibility in PyTorch, NumPy, and Python's random module."""
         seed = 42
-        torch.manual_seed(seed)
-        if torch.cuda.is_available():
+        try:
+            torch.manual_seed(seed)
             torch.cuda.manual_seed_all(seed)
+        except:
+            print("⚠️ CUDA not ready yet, skipping torch.manual_seed at this point.")
+
         np.random.seed(seed)
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
