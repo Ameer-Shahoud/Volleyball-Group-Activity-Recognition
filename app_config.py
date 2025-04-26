@@ -52,7 +52,8 @@ class _Config:
         """Sets the random seed for reproducibility in PyTorch, NumPy, and Python's random module."""
         seed = 42
         torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
         np.random.seed(seed)
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
