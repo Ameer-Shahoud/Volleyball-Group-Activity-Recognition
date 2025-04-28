@@ -1,8 +1,8 @@
 from typing import Type
 import torch
-from Baselines.B2_joint.b2_joint_history import B2JointHistory, B2JointHistoryItem
 from Baselines.B2_joint.b2_joint_model import B2JointModel
-from Models.base_trainer import _BaseTrainer
+from Abstracts.base_trainer import _BaseTrainer
+from Enums.classification_level import ClassificationLevel
 from Models.image_players_dataset import ImagePlayersDataset
 from torch import nn
 import torch.optim as optim
@@ -12,16 +12,14 @@ from Utils.cuda import get_device
 
 class B2JointTrainer(_BaseTrainer):
     def __init__(self, checkpoint_path: str = None, history_path: str = None):
-        super().__init__(checkpoint_path, history_path)
-
-    def _init_values(self):
-        self.player_train_loss, self.player_train_correct, self.player_train_total = 0.0, 0, 0
-        self.player_val_loss, self.player_val_correct, self.player_val_total = 0.0, 0, 0
-        self.player_test_loss, self.player_test_correct, self.player_test_total = 0.0, 0, 0
-
-        self.img_train_loss, self.img_train_correct, self.img_train_total = 0.0, 0, 0
-        self.img_val_loss, self.img_val_correct, self.img_val_total = 0.0, 0, 0
-        self.img_test_loss, self.img_test_correct, self.img_test_total = 0.0, 0, 0
+        super().__init__(
+            checkpoint_path,
+            history_path,
+            loss_labels=[
+                ClassificationLevel.PLAYER.value,
+                ClassificationLevel.IMAGE.value
+            ]
+        )
 
     def _get_dataset_type(self) -> Type[ImagePlayersDataset]:
         return ImagePlayersDataset
@@ -48,27 +46,6 @@ class B2JointTrainer(_BaseTrainer):
             self._optimizers[1], mode='min', factor=0.1, patience=2
         )]
 
-    def _get_history(self, history_path: str = None) -> B2JointHistory:
-        return B2JointHistory(history_path)
-
-    def _on_epoch_step(self, epoch: int):
-        super()._on_epoch_step(epoch)
-
-        self._schedulers[0].step(self.player_val_loss)
-        self._schedulers[1].step(self.img_val_loss)
-
-        return B2JointHistoryItem(
-            epoch,
-            self.player_train_loss / self.player_train_loss,
-            100 * self.player_train_correct / self.player_train_total,
-            self.player_val_loss / self.val_size,
-            100 * self.player_val_correct / self.player_val_total,
-            self.img_train_loss / self.img_train_loss,
-            100 * self.img_train_correct / self.img_train_total,
-            self.img_val_loss / self.val_size,
-            100 * self.img_val_correct / self.img_val_total,
-        )
-
     def _train_batch_step(self, inputs, labels):
         player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss = self.__get_outputs(
             inputs, labels)
@@ -79,54 +56,46 @@ class B2JointTrainer(_BaseTrainer):
         total_loss.backward()
         [o.step() for o in self._optimizers]
 
-        self.player_train_loss += player_loss.item()
+        self.train_loss[0] += player_loss.item()
         _, player_predicted = player_outputs.max(1)
-        self.player_train_correct += (player_predicted ==
-                                      player_labels).sum().item()
-        self.player_train_total += player_labels.size(0)
+        self.train_correct[0] += (player_predicted ==
+                                  player_labels).sum().item()
+        self.train_total[0] += player_labels.size(0)
 
-        self.img_train_loss += img_loss.item()
+        self.train_loss[1] += img_loss.item()
         _, img_predicted = img_outputs.max(1)
-        self.img_train_correct += (img_predicted == img_labels).sum().item()
-        self.img_train_total += img_labels.size(0)
+        self.train_correct[1] += (img_predicted == img_labels).sum().item()
+        self.train_total[1] += img_labels.size(0)
 
     def _eval_batch_step(self, inputs, labels):
         player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss = self.__get_outputs(
             inputs, labels)
 
-        self.player_val_loss += player_loss.item()
+        self.val_loss[0] += player_loss.item()
         _, player_predicted = player_outputs.max(1)
-        self.player_val_correct += (player_predicted ==
-                                    player_labels).sum().item()
-        self.player_val_total += player_labels.size(0)
+        self.val_correct[0] += (player_predicted ==
+                                player_labels).sum().item()
+        self.val_total[0] += player_labels.size(0)
 
-        self.img_val_loss += img_loss.item()
+        self.val_loss[1] += img_loss.item()
         _, img_predicted = img_outputs.max(1)
-        self.img_val_correct += (img_predicted == img_labels).sum().item()
-        self.img_val_total += img_labels.size(0)
+        self.val_correct[1] += (img_predicted == img_labels).sum().item()
+        self.val_total[1] += img_labels.size(0)
 
     def _test_batch_step(self, inputs, labels):
         player_labels, player_outputs, player_loss, img_labels, img_outputs, img_loss = self.__get_outputs(
             inputs, labels)
 
-        self.player_test_loss += player_loss.item()
+        self.test_loss[0] += player_loss.item()
         _, player_predicted = player_outputs.max(1)
-        self.player_test_correct += (player_predicted ==
-                                     player_labels).sum().item()
-        self.player_test_total += player_labels.size(0)
+        self.test_correct[0] += (player_predicted ==
+                                 player_labels).sum().item()
+        self.test_total[0] += player_labels.size(0)
 
-        self.img_test_loss += img_loss.item()
+        self.test_loss[1] += img_loss.item()
         _, img_predicted = img_outputs.max(1)
-        self.img_test_correct += (img_predicted == img_labels).sum().item()
-        self.img_test_total += img_labels.size(0)
-
-    def _on_test_step(self):
-        print(
-            f"""Test Results:
-            Player Loss: {self.player_test_loss/self.test_size:.4f}, Player Acc: {100 * self.player_test_correct/self.player_test_total:.2f}%
-            Image Loss: {self.img_test_loss/self.test_size:.4f}, Image Acc: {100 * self.img_test_correct/self.img_test_total:.2f}%
-            """
-        )
+        self.test_correct[1] += (img_predicted == img_labels).sum().item()
+        self.test_total[1] += img_labels.size(0)
 
     def __get_outputs(self, inputs, labels):
         player_labels = labels[0]

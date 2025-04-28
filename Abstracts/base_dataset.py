@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset
 from abc import ABC, abstractmethod
 from Enums.dataset_type import DatasetType
-from Models.config_mixin import _ConfigMixin
+from Abstracts.config_mixin import _ConfigMixin
 from Models.video_annotations import VideoAnnotations
 from Utils.dataset import get_frame_img_path
 

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import os
 import pickle
 
-from Models.config_mixin import _ConfigMixin
+from Abstracts.config_mixin import _ConfigMixin
 
 
 class _BaseHistory(_ConfigMixin, ABC):

@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 from Models.box import BoxInfo
-from Models.config_mixin import _ConfigMixin
+from Abstracts.config_mixin import _ConfigMixin
 
 
 def add_box(img, box_info: BoxInfo, font=cv2.FONT_HERSHEY_SIMPLEX, color=(255, 0, 0)):

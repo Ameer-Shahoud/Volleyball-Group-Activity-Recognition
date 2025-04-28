@@ -1,4 +1,4 @@
-from Models.config_mixin import _ConfigMixin
+from Abstracts.config_mixin import _ConfigMixin
 
 
 def get_video_path(video: int):

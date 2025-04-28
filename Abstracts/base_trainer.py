@@ -6,19 +6,23 @@ from torch import nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from Enums.dataset_type import DatasetType
-from Models.base_checkpoint import _BaseCheckpoint
-from Models.base_dataset import _BaseDataset
-from Models.base_model import _BaseModel
+from Abstracts.base_checkpoint import _BaseCheckpoint
+from Abstracts.base_dataset import _BaseDataset
+from Abstracts.base_model import _BaseModel
 from Models.checkpoint import Checkpoint
-from Models.config_mixin import _ConfigMixin
-from Models.base_history import _BaseHistory, _BaseHistoryItem
+from Abstracts.config_mixin import _ConfigMixin
+from Abstracts.base_history import _BaseHistory, _BaseHistoryItem
+from Models.history import History, HistoryItem
 from Utils.cuda import get_device
 
 
 class _BaseTrainer(_ConfigMixin, ABC):
-    def __init__(self, checkpoint_path: str = None, history_path: str = None, suffix: str = None):
-        self._init_values()
+    def __init__(self, checkpoint_path: str = None, history_path: str = None, suffix: str = None, loss_labels: list[str] = []):
+        self._suffix = suffix
+        self._loss_labels = loss_labels
+
         self._prepare_loaders()
+        self._init_values()
 
         self._model = self._get_model()
         self._criterions = self.get_criterions()
@@ -33,9 +37,14 @@ class _BaseTrainer(_ConfigMixin, ABC):
 
         self._to_available_device()
 
-    @abstractmethod
     def _init_values(self) -> None:
-        pass
+        l = len(self._loss_labels)
+        self.train_loss, self.train_correct, self.train_total = [
+            0.0] * l, [0] * l, [0] * l
+        self.val_loss, self.val_correct, self.val_total = [
+            0.0] * l, [0] * l, [0] * l
+        self.test_loss, self.test_correct, self.test_total = [
+            0.0] * l, [0] * l, [0] * l
 
     @abstractmethod
     def _get_dataset_type(self) -> Type[_BaseDataset]:
@@ -80,6 +89,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
     def _get_checkpoint(self, checkpoint_path: str = None) -> _BaseCheckpoint:
         return Checkpoint(
             input_path=checkpoint_path,
+            suffix=self._suffix,
             epoch=0,
             model_state=self._model.state_dict(),
             criterions_state=list(
@@ -93,9 +103,8 @@ class _BaseTrainer(_ConfigMixin, ABC):
             ),
         )
 
-    @abstractmethod
     def _get_history(self, history_path: str = None) -> _BaseHistory:
-        pass
+        return History(history_path, self._suffix)
 
     def _to_available_device(self) -> None:
         self._model.to(get_device())
@@ -150,9 +159,25 @@ class _BaseTrainer(_ConfigMixin, ABC):
             ),
         )
 
-    @abstractmethod
+        if len(self._schedulers):
+            for i in range(len(self._schedulers)):
+                self._schedulers[i].step(self.val_loss[i])
+
+        r = range(len(self._loss_labels))
+        return HistoryItem(
+            epoch,
+            [self.train_loss[i] / self.train_size for i in r],
+            [100 * self.train_correct[i] / self.train_total[i] for i in r],
+            [self.val_loss[i] / self.val_size for i in r],
+            [100 * self.val_correct[i] / self.val_total[i] for i in r],
+            labels=self._loss_labels
+        )
+
     def _on_test_step(self) -> None:
-        pass
+        print(
+            "Test Results:\n",
+            *[f"{self._loss_labels[i].capitalize()}  ---   Loss: {self.test_loss[i]/self.test_size:.4f}, Acc: {100 * self.test_correct[i]/self.test_total[i]:.2f}%" for i in range(len(self._loss_labels))]
+        )
 
     def _save_trained_model(self) -> None:
         torch.save(self._model, self._model_path)

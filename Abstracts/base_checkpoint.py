@@ -5,7 +5,7 @@ from typing import Any
 
 import torch
 
-from Models.config_mixin import _ConfigMixin
+from Abstracts.config_mixin import _ConfigMixin
 from Utils import cuda
 
 

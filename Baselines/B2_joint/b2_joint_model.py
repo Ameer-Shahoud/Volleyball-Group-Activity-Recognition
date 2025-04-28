@@ -2,7 +2,7 @@ import torch
 
 from Enums.classification_level import ClassificationLevel
 from Models.backbone import BackboneModel
-from Models.base_model import _BaseModel
+from Abstracts.base_model import _BaseModel
 from torch import nn
 
 from Models.custom_max_pool import CustomMaxPool

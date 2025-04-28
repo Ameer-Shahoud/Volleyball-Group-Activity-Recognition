@@ -4,7 +4,7 @@ import torch
 import torchvision.transforms as transforms
 from Enums.classification_level import ClassificationLevel
 from Enums.dataset_type import DatasetType
-from Models.base_dataset import _BaseDataset, _BaseDatasetItem
+from Abstracts.base_dataset import _BaseDataset, _BaseDatasetItem
 from Utils.dataset import get_frame_img_path
 
 

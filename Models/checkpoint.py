@@ -1,11 +1,12 @@
 from typing import Any
-from Models.base_checkpoint import _BaseCheckpoint
+from Abstracts.base_checkpoint import _BaseCheckpoint
 
 
 class Checkpoint(_BaseCheckpoint):
     def __init__(
         self,
         input_path: str = None,
+        suffix: str = None,
         epoch=0,
         model_state: dict[str, Any] = {},
         criterions_state: list[dict[str, Any]] = {},
@@ -14,6 +15,7 @@ class Checkpoint(_BaseCheckpoint):
     ):
         super().__init__(
             input_path=input_path,
+            suffix=suffix,
             epoch=epoch,
             model_state=model_state,
             criterions_state=criterions_state,

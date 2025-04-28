@@ -1,6 +1,6 @@
 from collections import defaultdict
 from Models.box import BoxInfo
-from Models.config_mixin import _ConfigMixin
+from Abstracts.config_mixin import _ConfigMixin
 from Utils.dataset import get_frame_img_path, get_players_box_annot_path
 from Utils.visualization import add_box, show_clip, show_image
 import cv2
@@ -16,6 +16,7 @@ class ClipAnnotations(_ConfigMixin):
         __category (str): Action category for the clip.
         __boxes (defaultdict): Dictionary of frame IDs and corresponding list of BoxInfo objects.
     """
+
     def __init__(self, video: int, clip: int, category: str):
         """
         Initializes a ClipAnnotations object by loading annotations for the given clip.

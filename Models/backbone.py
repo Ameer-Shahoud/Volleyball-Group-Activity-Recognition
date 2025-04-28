@@ -1,7 +1,7 @@
 import torch
 from torch import nn
 from Enums.classification_level import ClassificationLevel
-from Models.config_mixin import _ConfigMixin
+from Abstracts.config_mixin import _ConfigMixin
 from Utils.cuda import get_device
 from torchvision import models
 
