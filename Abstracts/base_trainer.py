@@ -240,6 +240,9 @@ class _BaseTrainer(_ConfigMixin, ABC):
                 self._test_batch_step(inputs, labels)
             self._on_test_step()
 
+    def plot_history(self):
+        self._history.plot_history()
+
     def _inputs_to_device(self, inputs, labels):
         if isinstance(inputs, (tuple, list)):
             inputs = tuple([_input.to(get_device())

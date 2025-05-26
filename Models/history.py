@@ -1,4 +1,5 @@
 from Abstracts.base_history import _BaseHistory, _BaseHistoryItem
+import matplotlib.pyplot as plt
 
 
 class History(_BaseHistory):
@@ -6,7 +7,53 @@ class History(_BaseHistory):
         super().__init__(input_path, suffix)
 
     def plot_history(self):
-        pass
+        if not len(self.list()):
+            return
+
+        items: list[HistoryItem] = self.list()
+        labels_count = len(items[0].labels)
+        fig, axes = plt.subplots(
+            labels_count, 2, figsize=(12, 4 * labels_count)
+        )
+
+        for l in range(labels_count):
+            ax_loss = axes[l][0] if labels_count > 1 else axes[0]
+            ax_acc = axes[l][1] if labels_count > 1 else axes[1]
+
+            # Loss
+            ax_loss.plot(
+                list(map(lambda x: x[l], map(lambda t: t.train_loss, items))),
+                label='Train Loss'
+            )
+            ax_loss.plot(
+                list(map(lambda x: x[l], map(lambda t: t.val_loss, items))),
+                label='Val Loss'
+            )
+            ax_loss.set_title(
+                f'{items[0].labels[l].capitalize()} Level - Loss'
+            )
+            ax_loss.set_xlabel('Epoch')
+            ax_loss.set_ylabel('Loss')
+            ax_loss.legend()
+
+            # Accuracy
+            ax_acc.plot(
+                list(map(lambda x: x[l], map(lambda t: t.train_acc, items))),
+                label='Train Acc'
+            )
+            ax_acc.plot(
+                list(map(lambda x: x[l], map(lambda t: t.val_acc, items))),
+                label='Val Acc'
+            )
+            ax_acc.set_title(
+                f'{items[0].labels[l].capitalize()} Level - Accuracy'
+            )
+            ax_acc.set_xlabel('Epoch')
+            ax_acc.set_ylabel('Accuracy')
+            ax_acc.legend()
+
+        plt.tight_layout()
+        plt.show()
 
 
 class HistoryItem(_BaseHistoryItem):

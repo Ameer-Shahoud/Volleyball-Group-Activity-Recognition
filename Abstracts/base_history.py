@@ -47,12 +47,13 @@ class _BaseHistory(_ConfigMixin, ABC):
         with open(self._output_path, "wb") as f:
             pickle.dump(self, f)
 
-    def load(self, from_input=False) -> None:
+    def load(self, from_input=False) -> '_BaseHistory':
         path = self._input_path if from_input else self._output_path
         try:
             with open(path, "rb") as f:
                 history: _BaseHistory = pickle.load(f)
                 self._history_list = history.list()
+                return history
         except FileNotFoundError:
             raise FileNotFoundError(
                 f"No previous '{path}' history found, starting fresh.")
