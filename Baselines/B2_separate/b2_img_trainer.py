@@ -7,7 +7,8 @@ from Models.image_players_dataset import ImagePlayersDataset
 
 
 class B2ImgTrainer(_BaseTrainer):
-    def __init__(self, checkpoint_path: str = None, history_path: str = None):
+    def __init__(self, pretrained_player_model_path: str, checkpoint_path: str = None, history_path: str = None):
+        self.pretrained_player_model_path = pretrained_player_model_path
         super().__init__(
             checkpoint_path,
             history_path,
@@ -19,12 +20,11 @@ class B2ImgTrainer(_BaseTrainer):
         return ImagePlayersDataset
 
     def _get_model(self) -> B2ImgModel:
-        return B2ImgModel()
+        return B2ImgModel(self.pretrained_player_model_path)
 
     def _train_batch_step(self, inputs, labels):
         self._optimizers[0].zero_grad()
-        outputs = self.__map_outputs(self._model(inputs))
-        loss: torch.Tensor = self._criterions[0](outputs, labels)
+        labels, outputs, loss = self.__get_outputs(inputs, labels)
 
         loss.backward()
         self._optimizers[0].step()
@@ -36,8 +36,7 @@ class B2ImgTrainer(_BaseTrainer):
         self.train_total[0] += labels.size(0)
 
     def _eval_batch_step(self, inputs, labels):
-        outputs = self.__map_outputs(self._model(inputs))
-        loss: torch.Tensor = self._criterions[0](outputs, labels)
+        labels, outputs, loss = self.__get_outputs(inputs, labels)
 
         self.val_loss[0] += loss.item()
 
@@ -46,8 +45,7 @@ class B2ImgTrainer(_BaseTrainer):
         self.val_total[0] += labels.size(0)
 
     def _test_batch_step(self, inputs, labels):
-        outputs = self.__map_outputs(self._model(inputs))
-        loss: torch.Tensor = self._criterions[0](outputs, labels)
+        labels, outputs, loss = self.__get_outputs(inputs, labels)
 
         self.test_loss[0] += loss.item()
 
@@ -55,6 +53,9 @@ class B2ImgTrainer(_BaseTrainer):
         self.test_correct[0] += (predicted == labels).sum().item()
         self.test_total[0] += labels.size(0)
 
-    def __map_outputs(self, outputs: torch.Tensor) -> torch.Tensor:
-        batch_size, _, __ = outputs[0].shape
-        return outputs[0].view(batch_size, -1)
+    def __get_outputs(self, inputs, labels):
+        _, img_labels = labels
+        img_outputs = self._model(inputs)
+        img_loss = self._criterions[0](img_outputs, img_labels)
+
+        return img_labels, img_outputs, img_loss

@@ -7,12 +7,11 @@ from Models.custom_max_pool import CustomMaxPool
 
 
 class B2ImgModel(_BaseModel):
-    def __init__(self, pretrained_player_model_path: str = None):
+    def __init__(self, pretrained_player_model_path: str):
         super().__init__()
 
         self.pretrained_player_model: B2PlayerModel = _BaseModel.load_model(
             model_path=pretrained_player_model_path,
-            suffix=ClassificationLevel.PLAYER.value
         )
 
         for p in self.pretrained_player_model.parameters():

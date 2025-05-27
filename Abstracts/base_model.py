@@ -3,6 +3,7 @@ import os
 from torch import nn
 import torch
 from Abstracts.config_mixin import _ConfigMixin
+from Utils import cuda
 
 
 class _BaseModel(nn.Module, _ConfigMixin, ABC):
@@ -19,4 +20,4 @@ class _BaseModel(nn.Module, _ConfigMixin, ABC):
             _ConfigMixin.get_cf(None).output_dir,
             f'model.{suffix}.pth' if suffix else 'model.pth'
         )
-        return torch.load(_model_path)
+        return torch.load(_model_path, map_location=cuda.get_device(), weights_only=False)
