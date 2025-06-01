@@ -1,7 +1,7 @@
 {
     "id": "B3_extended",
     "description": "This Baseline finetuned ResNet50 to classify the whole image or frame bla bla bla...",
-    "output_dir": "B3_extended",
+    "output_dir": "B3",
     "dataset": {
         "past_frames_count": 4,
         "post_frames_count": 4,
