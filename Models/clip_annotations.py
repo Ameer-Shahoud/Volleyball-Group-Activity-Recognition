@@ -63,9 +63,12 @@ class ClipAnnotations(_ConfigMixin):
         )
 
         frames = sorted(self.__boxes.keys())
-        target_idx = frames.index(self.clip)
-        filtered: dict[int, list[BoxInfo]] = {frame_ID: self.__boxes[frame_ID]
-                                              for frame_ID in frames[(target_idx-past):(target_idx+post+1)]}
+        if frames.count(self.clip):
+            target_idx = frames.index(self.clip)
+            filtered: dict[int, list[BoxInfo]] = {frame_ID: self.__boxes[frame_ID]
+                                                  for frame_ID in frames[(target_idx-past):(target_idx+post+1)]}
+        else:
+            filtered = {}
         return filtered.items()
 
     def get_category(self):
