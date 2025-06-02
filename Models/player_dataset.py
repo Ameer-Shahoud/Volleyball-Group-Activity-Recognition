@@ -38,19 +38,20 @@ class PlayerDataset(_BaseDataset):
         items: list[PlayerDatasetItem] = self._flatten_dataset[index]
 
         player_imgs: list[torch.Tensor] = []
-        y_labels: list[torch.Tensor] = []
-        for item in items:
+        y_label: torch.Tensor = None
+        for i, item in enumerate(items):
             try:
                 player_imgs += [Image.open(item.img_path).convert(
                     'RGB').crop(item.box.box)]
             except FileNotFoundError:
                 raise FileNotFoundError(f"Image not found at {item.img_path}")
 
-            y_labels += torch.Tensor(
-                [self.get_cf().dataset.get_encoded_category(
-                    ClassificationLevel.PLAYER, item.box.category
-                )]
-            ).to(torch.long)
+            if i == self.get_bl_cf().dataset.past_frames_count or (i == len(items) - 1 and not y_label):
+                y_label = torch.Tensor(
+                    [self.get_cf().dataset.get_encoded_category(
+                        ClassificationLevel.PLAYER, item.box.category
+                    )]
+                ).to(torch.long)
 
         for i in range(len(player_imgs)):
             if self.has_bl_cf():
@@ -59,7 +60,7 @@ class PlayerDataset(_BaseDataset):
                 )(player_imgs[i])
             else:
                 player_imgs[i] = transforms.ToTensor()(player_imgs[i])
-        return torch.stack(player_imgs), torch.stack(y_labels)
+        return torch.stack(player_imgs), y_label[0]
 
 
 class PlayerDatasetItem(_BaseDatasetItem):
