@@ -71,10 +71,16 @@ class _DatasetConfig:
 
     def __init__(self, dataset_json: dict):
         """Initializes the _DatasetConfig object for preprocessing settings."""
-        self.past_frames_count: int = dataset_json.get('past_frames_count')
-        self.post_frames_count: int = dataset_json.get('post_frames_count')
+        past, post = dataset_json.get(
+            'past_frames_count'
+        ), dataset_json.get('post_frames_count')
+        self.past_frames_count: int = past if past else 0
+        self.post_frames_count: int = post if post else 0
         self.preprocess: _PreprocessConfig = _PreprocessConfig(
             dataset_json.get('preprocess'))
+
+    def get_seq_len(self):
+        return self.past_frames_count + self.post_frames_count + 1
 
 
 class _PreprocessConfig:

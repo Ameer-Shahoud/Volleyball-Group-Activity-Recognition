@@ -28,7 +28,7 @@ class ImagePlayersDataset(_BaseDataset):
                         boxes=boxes,
                         label=c.get_category(),
                     )]
-                if len(items):
+                if len(items) == self.get_bl_cf().dataset.get_seq_len():
                     dataset.append(items)
         return dataset
 
