@@ -39,7 +39,7 @@ class ClipAnnotations(_ConfigMixin):
 
     def __add_box(self, box: BoxInfo):
         """Adds a BoxInfo object to the dictionary of frame boxes."""
-        if box.player_ID > 11:
+        if box.player_ID > 11 or box.lost:
             return
         self.__boxes[box.frame_ID].append(box)
 

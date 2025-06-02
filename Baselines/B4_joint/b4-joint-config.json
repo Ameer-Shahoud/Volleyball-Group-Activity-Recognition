@@ -1,10 +1,10 @@
 {
-    "id": "B2_separate",
+    "id": "B4_joint",
     "description": "This Baseline finetuned ResNet50 to classify the whole image or frame according to each player class bla bla bla...",
-    "output_dir": "B2",
+    "output_dir": "B4",
     "dataset": {
-        "past_frames_count": 0,
-        "post_frames_count": 0,
+        "past_frames_count": 4,
+        "post_frames_count": 4,
         "preprocess": {
             "transforms": {
                 "player": {
@@ -97,7 +97,7 @@
         }
     },
     "training": {
-        "epochs": 30,
+        "epochs": 15,
         "batch_size": 64,
         "learning_rate": 0.001
     }

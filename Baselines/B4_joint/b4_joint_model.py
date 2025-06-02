@@ -5,9 +5,10 @@ from Models.backbone import BackboneModel
 from Abstracts.base_model import _BaseModel
 
 from Models.classifier_head import ClassifierHead
+from Models.lstm_head import LSTMHead
 
 
-class B2JointModel(_BaseModel):
+class B4JointModel(_BaseModel):
     def __init__(self):
         super().__init__()
         self.player_base = BackboneModel(level=ClassificationLevel.PLAYER) \
@@ -15,7 +16,15 @@ class B2JointModel(_BaseModel):
             .set_backbone_layer_requires_grad('layer4', True) \
             .set_backbone_layer_requires_grad('fc', True)
 
+        self.player_lstm = LSTMHead(
+            num_classes=len(self.get_cf().dataset.get_categories(
+                ClassificationLevel.PLAYER)
+            )
+        )
+
         self.img_head = ClassifierHead(
+            input_dim=512,
+            hidden_dim=256,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.IMAGE)
             )
@@ -23,11 +32,16 @@ class B2JointModel(_BaseModel):
 
     def forward(self, x: torch.Tensor):
         batch_size, frames_count, players_count, channels, width, height = x.shape
+
+        x = x.transpose(1, 2).contiguous()
         x_view = x.view(
             batch_size*players_count, frames_count, channels, width, height
         )
 
-        player_outputs, player_features = self.player_base(x_view)
+        _, player_features = self.player_base(x_view)
+        player_features, player_outputs = self.player_lstm(
+            player_features.view(batch_size * players_count, frames_count, -1)
+        )
 
         player_features = player_features.view(batch_size, players_count, -1)
         img_outputs = self.img_head(player_features)

@@ -52,9 +52,8 @@ class ImagePlayersDataset(_BaseDataset):
         img_players_tensors = [[torch.Tensor() for _ in img_players[0]]
                                for __ in img_players
                                ]
-        label_tensors = [[torch.Tensor() for _ in img_players[0]]
-                         for __ in img_players
-                         ]
+        label_tensors = [torch.Tensor() for _ in img_players[0]]
+
         for i in range(len(img_players)):
             for j in range(len(img_players[i])):
                 if self.has_bl_cf():
@@ -71,18 +70,19 @@ class ImagePlayersDataset(_BaseDataset):
                 ).to(torch.long)
 
                 img_players_tensors[i][j] = transformed
-                label_tensors[i][j] = label
+                if i == self.get_bl_cf().dataset.past_frames_count or (i == len(img_players) - 1 and not len(label_tensors)):
+                    label_tensors[j] = label
 
             img_players_tensors[i] = torch.stack(img_players_tensors[i])
-            label_tensors[i] = torch.stack(label_tensors[i])
 
+        label_tensors = torch.stack(label_tensors)
         img_label = torch.Tensor(
             [self.get_cf().dataset.get_encoded_category(
                 ClassificationLevel.IMAGE, item.label
             )]
         ).to(torch.long)
 
-        return torch.stack(img_players_tensors), (torch.stack(label_tensors), img_label[0])
+        return torch.stack(img_players_tensors), (label_tensors, img_label[0])
 
 
 class ImagePlayersDatasetItem(_BaseDatasetItem):
