@@ -30,7 +30,7 @@ class PlayerDataset(_BaseDataset):
                             box=box
                         )]
                 for item in items.values():
-                    if len(items) == self.get_bl_cf().dataset.get_seq_len():
+                    if len(item) == self.get_bl_cf().dataset.get_seq_len():
                         dataset.append(item)
         return dataset
 
