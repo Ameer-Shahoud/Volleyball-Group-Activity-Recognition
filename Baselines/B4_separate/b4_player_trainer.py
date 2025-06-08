@@ -54,7 +54,3 @@ class B4PlayerTrainer(_BaseTrainer):
         _, predicted = outputs.max(1)
         self.test_correct[0] += (predicted == labels).sum().item()
         self.test_total[0] += labels.size(0)
-
-    def __map_outputs(self, outputs: torch.Tensor) -> torch.Tensor:
-        batch_size, _, __ = outputs[0].shape
-        return outputs[0].view(batch_size, -1)
