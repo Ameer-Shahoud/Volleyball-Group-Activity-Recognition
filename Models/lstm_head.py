@@ -9,4 +9,4 @@ class LSTMHead(nn.Module):
 
     def forward(self, x):
         lstm_out, _ = self.lstm(x)
-        return lstm_out[:, -1, :], self.classifier(lstm_out[:, -1, :])
+        return lstm_out, self.classifier(lstm_out[:, -1, :])

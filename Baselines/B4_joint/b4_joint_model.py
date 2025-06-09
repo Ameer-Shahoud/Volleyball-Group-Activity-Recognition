@@ -43,7 +43,8 @@ class B4JointModel(_BaseModel):
             player_features.view(batch_size * players_count, frames_count, -1)
         )
 
-        player_features = player_features.view(batch_size, players_count, -1)
+        player_features = player_features[
+            :, -1, :].view(batch_size, players_count, -1)
         img_outputs = self.img_head(player_features)
 
         return player_outputs, img_outputs

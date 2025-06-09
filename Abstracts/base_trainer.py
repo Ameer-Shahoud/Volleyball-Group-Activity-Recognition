@@ -182,7 +182,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
     def _save_trained_model(self) -> None:
         torch.save(self._model, self._model_path)
 
-    def train(self, override=False):
+    def _init_for_train(self, override=False) -> None:
         self.get_bl_cf().create_baseline_dir()
         self.clear_output()
 
@@ -200,6 +200,9 @@ class _BaseTrainer(_ConfigMixin, ABC):
                 self._checkpoint.reset()
 
         self._to_available_device()
+
+    def train(self, override=False):
+        self._init_for_train(override)
 
         epochs = self.get_bl_cf().training.epochs
         for epoch in range(self._checkpoint.epoch, epochs):
