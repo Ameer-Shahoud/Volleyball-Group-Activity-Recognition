@@ -10,7 +10,7 @@ from Utils import cuda
 
 
 class _BaseCheckpoint(_ConfigMixin, ABC):
-    def __init__(self, input_path: str = None, suffix: str = None, epoch=0, **custom_state):
+    def __init__(self, input_path: str = None, suffix: str = None, epoch=0, model_state: dict[str, Any] = {}, **custom_state):
         self._input_path = input_path if input_path else os.path.join(
             self.get_bl_cf().output_dir,
             f'checkpoint.{suffix}.pth' if suffix else 'checkpoint.pth'
@@ -20,7 +20,12 @@ class _BaseCheckpoint(_ConfigMixin, ABC):
             f'checkpoint.{suffix}.pth' if suffix else 'checkpoint.pth'
         )
         self.epoch = epoch
-        self._initial_state = {'epoch': epoch, **custom_state}
+        self.model_state = model_state
+        self._initial_state = {
+            'epoch': epoch,
+            'model_state': model_state,
+            **custom_state
+        }
         self.update_state(**self._initial_state)
 
     @abstractmethod
@@ -39,7 +44,7 @@ class _BaseCheckpoint(_ConfigMixin, ABC):
     def save(self):
         torch.save(self._get_state_dict(), self._output_path)
 
-    def load(self, from_input=False) -> None:
+    def load(self, from_input=False) -> '_BaseCheckpoint':
         path = self._input_path if from_input else self._output_path
         try:
             state_dict = torch.load(
@@ -47,6 +52,7 @@ class _BaseCheckpoint(_ConfigMixin, ABC):
                 map_location=cuda.get_device()
             )
             self.update_state(**state_dict)
+            return self
         except FileNotFoundError:
             raise FileNotFoundError(
                 f"No previous '{path}' Checkpoint found, starting fresh.")
