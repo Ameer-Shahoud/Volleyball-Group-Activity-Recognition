@@ -269,3 +269,4 @@ class _BaseTrainer(_ConfigMixin, ABC):
         history.save()
         checkpoint.save()
         torch.save(model, self._model_path)
+        print("Version saved successfully.")

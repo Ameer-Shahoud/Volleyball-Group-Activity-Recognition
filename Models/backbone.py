@@ -7,9 +7,12 @@ from torchvision import models
 
 
 class BackboneModel(nn.Module, _ConfigMixin):
-    def __init__(self, level: ClassificationLevel, backbone: nn.Module = models.resnet50(weights=models.ResNet50_Weights.DEFAULT), *args, **kwargs):
+    def __init__(self, level: ClassificationLevel, backbone: nn.Module = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backbone = backbone
+        self.backbone = backbone if backbone else models.resnet50(
+            weights=models.ResNet50_Weights.DEFAULT
+        )
+
         self.__in_features = self.backbone.fc.in_features
         self.classifier = nn.Linear(
             self.__in_features,
