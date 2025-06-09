@@ -264,7 +264,8 @@ class _BaseTrainer(_ConfigMixin, ABC):
         checkpoint = self._get_checkpoint(
             checkpoint_path
         ).load(from_input=True)
-        model = self._get_model().load_state_dict(checkpoint.model_state)
+        model = self._get_model()
+        model.load_state_dict(checkpoint.model_state)
 
         history.save()
         checkpoint.save()
