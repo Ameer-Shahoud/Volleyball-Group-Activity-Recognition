@@ -6,6 +6,7 @@ from Enums.dataset_type import DatasetType
 from Abstracts.base_dataset import _BaseDataset, _BaseDatasetItem
 from Models.box import BoxInfo
 from Utils.dataset import get_frame_img_path
+import torch.nn.functional as F
 
 
 class ImagePlayersDataset(_BaseDataset):
@@ -18,7 +19,7 @@ class ImagePlayersDataset(_BaseDataset):
             for __, c in v.get_all_clips_annotations():
                 items:  list[ImagePlayersDatasetItem] = []
                 for frame_ID, boxes in c.get_within_range_frame_boxes():
-                    if len(boxes) != 12:
+                    if len(boxes) > 12 or (len(boxes) < 12 and self.get_bl_cf().dataset.filter_missing_players_boxes_frames):
                         continue
                     items += [ImagePlayersDatasetItem(
                         video=v.video,
@@ -28,8 +29,11 @@ class ImagePlayersDataset(_BaseDataset):
                         boxes=boxes,
                         label=c.get_category(),
                     )]
-                if len(items) == self.get_bl_cf().dataset.get_seq_len():
-                    dataset.append(items)
+                if self.get_bl_cf().is_temporal:
+                    if len(items) == self.get_bl_cf().dataset.get_seq_len():
+                        dataset.append(items)
+                else:
+                    dataset.extend(map(lambda x: [x], items))
         return dataset
 
     def __getitem__(self, index) -> tuple[torch.Tensor, tuple[torch.Tensor, torch.Tensor]]:
@@ -52,28 +56,34 @@ class ImagePlayersDataset(_BaseDataset):
         img_players_tensors = [[torch.Tensor() for _ in img_players[0]]
                                for __ in img_players
                                ]
-        label_tensors = [torch.Tensor() for _ in img_players[0]]
+        label_tensors: list[torch.Tensor] = [None for _ in img_players[0]]
 
         for i in range(len(img_players)):
             for j in range(len(img_players[i])):
                 if self.has_bl_cf():
-                    transformed = self.get_bl_cf().dataset.preprocess.get_transforms(
-                        ClassificationLevel.PLAYER, self._type
-                    )(img_players[i][j][0])
+                    transformed = self.get_bl_cf(
+                    ).dataset.preprocess.get_transforms()(img_players[i][j][0])
                 else:
                     transformed = transforms.ToTensor()(img_players[i][j][0])
 
-                label = torch.Tensor(
-                    [self.get_cf().dataset.get_encoded_category(
-                        ClassificationLevel.PLAYER, img_players[i][j][1]
-                    )]
-                ).to(torch.long)
-
                 img_players_tensors[i][j] = transformed
-                if i == self.get_bl_cf().dataset.past_frames_count or (i == len(img_players) - 1 and not len(label_tensors)):
+
+                if not label_tensors[j]:
+                    label = torch.Tensor(
+                        [self.get_cf().dataset.get_encoded_category(
+                            ClassificationLevel.PLAYER, img_players[i][j][1]
+                        )]
+                    ).to(torch.long)
                     label_tensors[j] = label
 
-            img_players_tensors[i] = torch.stack(img_players_tensors[i])
+            players_tensors = torch.stack(img_players_tensors[i])
+            players_count = players_tensors.shape[0]
+            if players_count < 12 and not self.get_bl_cf().dataset.filter_missing_players_boxes_frames:
+                players_tensors = F.pad(
+                    players_tensors,
+                    (0, 0, 0, 0, 0, 0, 0, 12-players_count)
+                )
+            img_players_tensors[i] = players_tensors
 
         label_tensors = torch.stack(label_tensors)
         img_label = torch.Tensor(
@@ -82,7 +92,10 @@ class ImagePlayersDataset(_BaseDataset):
             )]
         ).to(torch.long)
 
-        return torch.stack(img_players_tensors), (label_tensors, img_label[0])
+        label = (label_tensors,
+                 img_label[0]) if self.get_bl_cf().is_joint else img_label[0]
+
+        return torch.stack(img_players_tensors), label
 
 
 class ImagePlayersDatasetItem(_BaseDatasetItem):

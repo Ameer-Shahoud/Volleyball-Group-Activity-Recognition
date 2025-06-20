@@ -6,7 +6,7 @@ class History(_BaseHistory):
     def __init__(self, input_path: str = None, suffix: str = None):
         super().__init__(input_path, suffix)
 
-    def plot_history(self):
+    def plot_history(self, title: str = None):
         if not len(self.list()):
             return
 
@@ -15,6 +15,9 @@ class History(_BaseHistory):
         fig, axes = plt.subplots(
             labels_count, 2, figsize=(12, 4 * labels_count)
         )
+
+        if title:
+            fig.suptitle(title, fontsize=16)
 
         for l in range(labels_count):
             ax_loss = axes[l][0] if labels_count > 1 else axes[0]

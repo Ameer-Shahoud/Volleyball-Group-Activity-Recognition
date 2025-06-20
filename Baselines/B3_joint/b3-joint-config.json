@@ -1,10 +1,11 @@
 {
-    "id": "B1",
-    "description": "This Baseline finetuned ResNet50 to classify the whole image or frame bla bla bla...",
-    "output_dir": "B1",
-    "is_joint": false,
+    "id": "B3_joint",
+    "description": "This Baseline finetuned ResNet50 to classify the whole image or frame according to each player class bla bla bla...",
+    "output_dir": "B3",
+    "is_joint": true,
     "is_temporal": false,
     "dataset": {
+        "filter_missing_players_boxes_frames": true,
         "past_frames_count": 1,
         "post_frames_count": 1,
         "preprocess": {

@@ -30,8 +30,11 @@ class PlayerDataset(_BaseDataset):
                             box=box
                         )]
                 for item in items.values():
-                    if len(item) == self.get_bl_cf().dataset.get_seq_len():
-                        dataset.append(item)
+                    if self.get_bl_cf().is_temporal:
+                        if len(item) == self.get_bl_cf().dataset.get_seq_len():
+                            dataset.append(item)
+                    else:
+                        dataset.extend(map(lambda x: [x], item))
         return dataset
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
@@ -55,9 +58,8 @@ class PlayerDataset(_BaseDataset):
 
         for i in range(len(player_imgs)):
             if self.has_bl_cf():
-                player_imgs[i] = self.get_bl_cf().dataset.preprocess.get_transforms(
-                    ClassificationLevel.PLAYER, self._type
-                )(player_imgs[i])
+                player_imgs[i] = self.get_bl_cf(
+                ).dataset.preprocess.get_transforms()(player_imgs[i])
             else:
                 player_imgs[i] = transforms.ToTensor()(player_imgs[i])
         return torch.stack(player_imgs), y_label[0]

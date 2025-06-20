@@ -121,7 +121,7 @@ class _DatasetConfig:
         return self.__categories.get(level.value)
 
     def get_encoded_category(self, level: ClassificationLevel, category: str):
-        return self.__encoded_categories[level.value][category]
+        return self.__encoded_categories.get(level.value).get(category)
 
     def get_decoded_category(self, level: ClassificationLevel, encoded_category: int):
         return self.__decoded_categories[level.value][encoded_category]

@@ -59,7 +59,7 @@ class _BaseHistory(_ConfigMixin, ABC):
                 f"No previous '{path}' history found, starting fresh.")
 
     @abstractmethod
-    def plot_history(self) -> None:
+    def plot_history(self, title: str = None) -> None:
         pass
 
 

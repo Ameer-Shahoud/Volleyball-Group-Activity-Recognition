@@ -11,7 +11,7 @@ class _BaseModel(nn.Module, _ConfigMixin, ABC):
         super().__init__(*args, **kwargs)
 
     @abstractmethod
-    def forward(self, x: torch.Tensor):
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
         pass
 
     @staticmethod

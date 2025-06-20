@@ -43,6 +43,8 @@ class _BLConfig:
         self.output_dir: str = os.path.join(
             cf.get_config().output_dir,  self.json.get('output_dir'), self.id
         )
+        self.is_temporal: bool = self.json.get('is_temporal')
+        self.is_joint: bool = self.json.get('is_joint')
         self.dataset: _DatasetConfig = _DatasetConfig(self.json.get('dataset'))
         self.training: _TrainingConfig = _TrainingConfig(
             self.json.get('training'))
@@ -71,6 +73,9 @@ class _DatasetConfig:
 
     def __init__(self, dataset_json: dict):
         """Initializes the _DatasetConfig object for preprocessing settings."""
+        self.filter_missing_players_boxes_frames = dataset_json.get(
+            'filter_missing_players_boxes_frames'
+        )
         past, post = dataset_json.get(
             'past_frames_count'
         ), dataset_json.get('post_frames_count')
@@ -87,10 +92,9 @@ class _PreprocessConfig:
     def __init__(self, preprocess_json: dict):
         self.__transforms: dict = preprocess_json.get('transforms')
 
-    def get_transforms(self, level: ClassificationLevel, type: DatasetType):
+    def get_transforms(self):
         return transforms.Compose(
-            list(map(lambda t: self.__get_transform__(t),
-                 self.__transforms.get(level.value).get(type.value)))
+            list(map(lambda t: self.__get_transform__(t), self.__transforms))
         )
 
     def __get_transform__(self, transform: dict):

@@ -4,6 +4,7 @@ from Abstracts.config_mixin import _ConfigMixin
 from Utils.dataset import get_frame_img_path, get_players_box_annot_path
 from Utils.visualization import add_box, show_clip, show_image
 import cv2
+import random
 
 
 class ClipAnnotations(_ConfigMixin):
@@ -65,8 +66,18 @@ class ClipAnnotations(_ConfigMixin):
         frames = sorted(self.__boxes.keys())
         if frames.count(self.clip):
             target_idx = frames.index(self.clip)
-            filtered: dict[int, list[BoxInfo]] = {frame_ID: self.__boxes[frame_ID]
-                                                  for frame_ID in frames[(target_idx-past):(target_idx+post+1)]}
+            if self.get_bl_cf().is_temporal:
+                filtered: dict[int, list[BoxInfo]] = {frame_ID: self.__boxes[frame_ID]
+                                                      for frame_ID in frames[(target_idx-past):(target_idx+post+1)]}
+            else:
+                past = min(past, target_idx)
+                post = min(post, len(frames) - target_idx-1)
+                past_indices = random.sample(range(target_idx), past)
+                post_indices = random.sample(
+                    range(target_idx+1, len(frames)), post)
+
+                filtered: dict[int, list[BoxInfo]] = {frame_ID: self.__boxes[frame_ID]
+                                                      for frame_ID in map(lambda idx: frames[idx], past_indices + [target_idx] + post_indices)}
         else:
             filtered = {}
         return filtered.items()

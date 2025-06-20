@@ -25,7 +25,10 @@ class ImageDataset(_BaseDataset):
                         img_path=get_frame_img_path(v.video, c.clip, frame_ID),
                         label=c.get_category(),
                     )]
-                dataset.append(items)
+                if self.get_bl_cf().is_temporal:
+                    dataset.append(items)
+                else:
+                    dataset.extend(map(lambda x: [x], items))
         return dataset
 
     def __getitem__(self, index) -> tuple[torch.Tensor, torch.Tensor]:
@@ -40,9 +43,8 @@ class ImageDataset(_BaseDataset):
 
         for i in range(len(imgs)):
             if self.has_bl_cf():
-                imgs[i] = self.get_bl_cf().dataset.preprocess.get_transforms(
-                    ClassificationLevel.IMAGE, self._type
-                )(imgs[i])
+                imgs[i] = self.get_bl_cf(
+                ).dataset.preprocess.get_transforms()(imgs[i])
             else:
                 imgs[i] = transforms.ToTensor()(imgs[i])
 

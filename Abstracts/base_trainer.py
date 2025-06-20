@@ -35,6 +35,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
             f'model.{suffix}.pth' if suffix else 'model.pth'
         )
 
+        self._init_trainer()
         self._to_available_device()
 
     def _init_values(self) -> None:
@@ -105,6 +106,18 @@ class _BaseTrainer(_ConfigMixin, ABC):
 
     def _get_history(self, history_path: str = None) -> _BaseHistory:
         return History(history_path, self._suffix)
+
+    def _init_trainer(self) -> None:
+        try:
+            self._history.load(from_input=True)
+            self._checkpoint.load(from_input=True)
+            self._checkpoint.epoch += 1
+            self._on_checkpoint_load()
+            print('Checkpoint and history loaded successfully.')
+        except:
+            self._history.reset()
+            self._checkpoint.reset()
+            print('Checkpoint and history loading failed.')
 
     def _to_available_device(self) -> None:
         self._model.to(get_device())
@@ -190,18 +203,11 @@ class _BaseTrainer(_ConfigMixin, ABC):
             self._history.reset()
             self._checkpoint.reset()
         else:
-            try:
-                self._history.load(from_input=True)
-                self._checkpoint.load(from_input=True)
-                self._on_checkpoint_load()
-            except:
-                print('Loading Checkpoint failed, Training started from begining')
-                self._history.reset()
-                self._checkpoint.reset()
+            self._init_trainer()
 
         self._to_available_device()
-
         epochs = self.get_bl_cf().training.epochs
+
         for epoch in range(self._checkpoint.epoch, epochs):
             self._train_mode()
 
@@ -240,8 +246,8 @@ class _BaseTrainer(_ConfigMixin, ABC):
                 self._test_batch_step(inputs, labels)
             self._on_test_step()
 
-    def plot_history(self):
-        self._history.plot_history()
+    def plot_history(self, title: str = None):
+        self._history.plot_history(title)
 
     def _inputs_to_device(self, inputs, labels):
         if isinstance(inputs, (tuple, list)):

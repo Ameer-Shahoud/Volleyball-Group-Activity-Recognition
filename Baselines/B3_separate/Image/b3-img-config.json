@@ -1,12 +1,12 @@
 {
-    "id": "B1",
-    "description": "This Baseline finetuned ResNet50 to classify the whole image or frame bla bla bla...",
-    "output_dir": "B1",
+    "id": "B3_separate",
+    "description": "This Baseline finetuned ResNet50 to classify the whole image or frame according to each player class bla bla bla...",
+    "output_dir": "B3",
     "is_joint": false,
     "is_temporal": false,
     "dataset": {
-        "past_frames_count": 1,
-        "post_frames_count": 1,
+        "past_frames_count": 2,
+        "post_frames_count": 2,
         "preprocess": {
             "transforms": [
                 {
@@ -39,7 +39,7 @@
         }
     },
     "training": {
-        "epochs": 50,
+        "epochs": 30,
         "batch_size": 64,
         "learning_rate": 0.001
     }

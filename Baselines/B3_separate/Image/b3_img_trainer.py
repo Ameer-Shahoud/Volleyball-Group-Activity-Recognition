@@ -1,0 +1,23 @@
+from typing import Type
+from Baselines.B3_separate.Image.b3_img_model import B3ImgModel
+from Enums.classification_level import ClassificationLevel
+from Models.image_players_dataset import ImagePlayersDataset
+from Models.single_loss_trainer import SingleLossTrainer
+
+
+class B3ImgTrainer(SingleLossTrainer):
+    def __init__(self, pretrained_player_model_path: str, checkpoint_path: str = None, history_path: str = None):
+        self.pretrained_player_model_path = pretrained_player_model_path
+
+        super().__init__(
+            checkpoint_path,
+            history_path,
+            suffix=ClassificationLevel.IMAGE.value,
+            loss_labels=[ClassificationLevel.IMAGE.value]
+        )
+
+    def _get_dataset_type(self) -> Type[ImagePlayersDataset]:
+        return ImagePlayersDataset
+
+    def _get_model(self) -> B3ImgModel:
+        return B3ImgModel(self.pretrained_player_model_path)
