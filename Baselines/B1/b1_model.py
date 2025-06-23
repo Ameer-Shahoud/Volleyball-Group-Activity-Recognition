@@ -5,20 +5,17 @@ from Modules.backbone import BackboneModel
 
 
 class B1Model(_BaseModel):
-    def __init__(self, write_graph_to_tensorboard=False):
+    def __init__(self):
         super().__init__()
         self.model = BackboneModel(level=ClassificationLevel.IMAGE)
         # .set_backbone_requires_grad(False) \
         # .set_backbone_layer_requires_grad('layer4', True) \
         # .set_backbone_layer_requires_grad('fc', True)
 
-        if write_graph_to_tensorboard:
-            self._write_graph_to_tensorboard()
-
     def forward(self, x: torch.Tensor, return_features=False):
         return self.model(x)[1 if return_features else 0]
 
-    def _write_graph_to_tensorboard(self):
+    def write_graph_to_tensorboard(self):
         self.get_bl_cf().writer.add_graph(
             self,
             input_to_model=torch.randn(

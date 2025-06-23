@@ -24,5 +24,5 @@ class _BaseModel(nn.Module, _ConfigMixin, ABC):
         return torch.load(_model_path, map_location=cuda.get_device(), weights_only=False)
 
     @abstractmethod
-    def _write_graph_to_tensorboard(self) -> None:
+    def write_graph_to_tensorboard(self) -> None:
         pass
