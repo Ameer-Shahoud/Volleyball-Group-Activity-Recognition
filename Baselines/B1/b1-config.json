@@ -5,8 +5,8 @@
     "is_joint": false,
     "is_temporal": false,
     "dataset": {
-        "past_frames_count": 1,
-        "post_frames_count": 1,
+        "past_frames_count": 0,
+        "post_frames_count": 0,
         "preprocess": {
             "transforms": [
                 {
