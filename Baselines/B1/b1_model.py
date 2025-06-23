@@ -17,7 +17,7 @@ class B1Model(_BaseModel):
             self._write_graph_to_tensorboard()
 
     def forward(self, x: torch.Tensor, return_features=False):
-        return self.model(x)[1 if return_features else 0]
+        return self.to(get_device()).model(x)[1 if return_features else 0]
 
     def _write_graph_to_tensorboard(self):
         self.get_bl_cf().writer.add_graph(
