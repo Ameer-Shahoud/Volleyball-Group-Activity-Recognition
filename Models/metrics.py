@@ -3,6 +3,7 @@ import torch
 from torchmetrics import ConfusionMatrix, F1Score
 from Abstracts.config_mixin import _ConfigMixin
 from Types.metric_type import MetricType
+from Utils.cuda import get_device
 
 
 class Metrics(_ConfigMixin):
@@ -19,11 +20,11 @@ class Metrics(_ConfigMixin):
         self.__correct = [0] * l
         self.__total = [0] * l
         self.__f1 = [
-            F1Score(task='multiclass', num_classes=num) for num in num_classes
+            F1Score(task='multiclass', num_classes=num).to(get_device()) for num in num_classes
         ]
 
-        self.__labels = [torch.Tensor([])] * l
-        self.__predicted = [torch.Tensor([])] * l
+        self.__labels = [torch.Tensor([]).to(get_device())] * l
+        self.__predicted = [torch.Tensor([]).to(get_device())] * l
 
     def __get_idx(self, level: str):
         return self._loss_levels.index(level)
