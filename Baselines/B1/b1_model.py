@@ -2,6 +2,7 @@ import torch
 from Enums.classification_level import ClassificationLevel
 from Abstracts.base_model import _BaseModel
 from Modules.backbone import BackboneModel
+from Utils.cuda import get_device
 
 
 class B1Model(_BaseModel):
@@ -19,6 +20,7 @@ class B1Model(_BaseModel):
         return self.model(x)[1 if return_features else 0]
 
     def _write_graph_to_tensorboard(self):
+        self.to(get_device())
         self.get_bl_cf().writer.add_graph(
             self,
             input_to_model=torch.randn(
