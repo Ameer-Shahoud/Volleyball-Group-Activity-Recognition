@@ -36,16 +36,19 @@ class Metrics(_ConfigMixin):
         predicted: torch.Tensor,
         labels: torch.Tensor
     ):
-        idx = self.__get_idx(level)
-        self.__loss[idx] += loss
+        with torch.no_grad():
+            idx = self.__get_idx(level)
+            self.__loss[idx] += loss
 
-        self.__correct[idx] += (predicted == labels).sum().item()
-        self.__total[idx] += labels.size(0)
+            self.__correct[idx] += (predicted == labels).sum().item()
+            self.__total[idx] += labels.size(0)
 
-        self.__f1[idx].update(predicted, labels)
+            self.__f1[idx].update(predicted, labels)
 
-        self.__labels[idx] = torch.cat((self.__labels[idx], labels))
-        self.__predicted[idx] = torch.cat((self.__predicted[idx], predicted))
+            self.__labels[idx] = torch.cat((self.__labels[idx], labels))
+            self.__predicted[idx] = torch.cat(
+                (self.__predicted[idx], predicted)
+            )
 
     def reset(self):
         self.__init__(self._loss_levels, self._size)
@@ -63,17 +66,18 @@ class Metrics(_ConfigMixin):
         return self.__f1[idx].compute().cpu()
 
     def get_confusion_matrix(self, level: str, normalized=True):
-        idx = self.__get_idx(level)
-        num_classes = len(self.get_cf().dataset.get_categories(level))
+        with torch.no_grad():
+            idx = self.__get_idx(level)
+            num_classes = len(self.get_cf().dataset.get_categories(level))
 
-        cm = ConfusionMatrix(task="multiclass", num_classes=num_classes)(
-            self.__predicted[idx], self.__labels[idx]
-        )
+            cm = ConfusionMatrix(task="multiclass", num_classes=num_classes).to(get_device()).eval()(
+                self.__predicted[idx], self.__labels[idx]
+            )
 
-        if normalized:
-            cm = cm.float() / cm.sum(dim=1, keepdim=True).clamp(min=1e-6)
+            if normalized:
+                cm = cm.float() / cm.sum(dim=1, keepdim=True).clamp(min=1e-6)
 
-        return cm
+            return cm
 
     def get_classification_report(self, level: str):
         idx = self.__get_idx(level)
