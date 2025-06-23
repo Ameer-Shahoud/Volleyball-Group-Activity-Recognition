@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 import os
 import pickle
-
 from Abstracts.config_mixin import _ConfigMixin
 
 
@@ -11,6 +10,8 @@ class _BaseHistory(_ConfigMixin, ABC):
         input_path: str = None,
         suffix: str = None
     ):
+        super().__init__()
+
         self._input_path = input_path if input_path else os.path.join(
             self.get_bl_cf().output_dir,
             f'history.{suffix}.pkl' if suffix else 'history.pkl'
@@ -21,19 +22,24 @@ class _BaseHistory(_ConfigMixin, ABC):
             f'history.{suffix}.pkl' if suffix else 'history.pkl'
         )
 
+        self._fig_output_path = os.path.join(
+            self.get_bl_cf().output_dir,
+            f'history-figure.{suffix}.png' if suffix else 'history-figure.png'
+        )
+
         self._history_list: list[_BaseHistoryItem] = []
 
     def add(
         self,
         item: '_BaseHistoryItem',
         update_file=True,
-        print_item=True
+        print_item=True,
     ):
         self._history_list.append(item)
         if update_file:
             self.save()
         if print_item:
-            print(item)
+            self.get_bl_cf().logger.info(item)
 
     def list(self) -> list['_BaseHistoryItem']:
         return self._history_list
@@ -63,13 +69,10 @@ class _BaseHistory(_ConfigMixin, ABC):
         pass
 
 
-class _BaseHistoryItem(ABC):
+class _BaseHistoryItem(_ConfigMixin, ABC):
     def __init__(self, epoch: int):
+        super().__init__()
         self.epoch = epoch
-
-    @abstractmethod
-    def to_dict(self) -> dict[str, object]:
-        pass
 
     @abstractmethod
     def __str__(self) -> str:

@@ -1,39 +1,44 @@
 from Abstracts.base_history import _BaseHistory, _BaseHistoryItem
 import matplotlib.pyplot as plt
 
+from Models.metrics import Metrics
+
 
 class History(_BaseHistory):
     def __init__(self, input_path: str = None, suffix: str = None):
         super().__init__(input_path, suffix)
 
-    def plot_history(self, title: str = None):
+    def plot_history(self, write_fig_to_tensorboard=True):
         if not len(self.list()):
             return
 
         items: list[HistoryItem] = self.list()
-        labels_count = len(items[0].labels)
+        levels = items[0].levels
+        levels_count = len(items[0].levels)
+
         fig, axes = plt.subplots(
-            labels_count, 2, figsize=(12, 4 * labels_count)
+            levels_count, 3, figsize=(18, 4 * levels_count)
         )
 
-        if title:
-            fig.suptitle(title, fontsize=16)
+        if self.get_bl_cf().title:
+            fig.suptitle(self.get_bl_cf().title, fontsize=16)
 
-        for l in range(labels_count):
-            ax_loss = axes[l][0] if labels_count > 1 else axes[0]
-            ax_acc = axes[l][1] if labels_count > 1 else axes[1]
+        for i, level in enumerate(levels):
+            ax_loss = axes[i][0] if levels_count > 1 else axes[0]
+            ax_acc = axes[i][1] if levels_count > 1 else axes[1]
+            ax_f1 = axes[i][2] if levels_count > 1 else axes[2]
 
             # Loss
             ax_loss.plot(
-                list(map(lambda x: x[l], map(lambda t: t.train_loss, items))),
+                list(map(lambda t: t.train_metrics.get_loss(level), items)),
                 label='Train Loss'
             )
             ax_loss.plot(
-                list(map(lambda x: x[l], map(lambda t: t.val_loss, items))),
+                list(map(lambda t: t.val_metrics.get_loss(level), items)),
                 label='Val Loss'
             )
             ax_loss.set_title(
-                f'{items[0].labels[l].capitalize()} Level - Loss'
+                f'{level.capitalize()} Level - Loss'
             )
             ax_loss.set_xlabel('Epoch')
             ax_loss.set_ylabel('Loss')
@@ -41,21 +46,40 @@ class History(_BaseHistory):
 
             # Accuracy
             ax_acc.plot(
-                list(map(lambda x: x[l], map(lambda t: t.train_acc, items))),
+                list(map(lambda t: t.train_metrics.get_acc(level), items)),
                 label='Train Acc'
             )
             ax_acc.plot(
-                list(map(lambda x: x[l], map(lambda t: t.val_acc, items))),
+                list(map(lambda t: t.val_metrics.get_acc(level), items)),
                 label='Val Acc'
             )
             ax_acc.set_title(
-                f'{items[0].labels[l].capitalize()} Level - Accuracy'
+                f'{level.capitalize()} Level - Accuracy'
             )
             ax_acc.set_xlabel('Epoch')
             ax_acc.set_ylabel('Accuracy')
             ax_acc.legend()
 
+            # F1 Score
+            ax_f1.plot(
+                list(map(lambda t: t.train_metrics.get_f1(level), items)),
+                label='Train F1-Score'
+            )
+            ax_f1.plot(
+                list(map(lambda t: t.val_metrics.get_f1(level), items)),
+                label='Val F1-Score'
+            )
+            ax_f1.set_title(
+                f'{level.capitalize()} Level - F1-Score'
+            )
+            ax_f1.set_xlabel('Epoch')
+            ax_f1.set_ylabel('F1-Score')
+            ax_f1.legend()
+
         plt.tight_layout()
+        plt.savefig(self._fig_output_path)
+        if write_fig_to_tensorboard:
+            self.get_bl_cf().writer.add_figure("History figures", fig)
         plt.show()
 
 
@@ -63,30 +87,44 @@ class HistoryItem(_BaseHistoryItem):
     def __init__(
         self,
         epoch: int,
-        train_loss: list[float],
-        train_acc: list[float],
-        val_loss: list[float],
-        val_acc: list[float],
-        labels: list[str] = []
+        train_metrics: Metrics,
+        val_metrics: Metrics,
+        levels: list[str] = []
     ):
         super().__init__(epoch)
-        self.train_loss = train_loss
-        self.train_acc = train_acc
-        self.val_loss = val_loss
-        self.val_acc = val_acc
-        self.labels = labels
+        self.train_metrics = train_metrics
+        self.val_metrics = val_metrics
+        self.levels = levels
 
-    def to_dict(self) -> dict[str, object]:
-        return {
-            'epoch': self.epoch,
-            'train-loss': self.train_loss,
-            'train-acc': self.train_acc,
-            'val-loss': self.val_loss,
-            'val-acc': self.val_acc,
-        }
+        for level in levels:
+            self.get_bl_cf().writer.add_scalars(
+                main_tag=f"{level.capitalize()}/Loss",
+                tag_scalar_dict={
+                    "Train": train_metrics.get_loss(level),
+                    "Validation": val_metrics.get_loss(level),
+                },
+                global_step=epoch
+            )
+            self.get_bl_cf().writer.add_scalars(
+                main_tag=f"{level.capitalize()}/Accuracy",
+                tag_scalar_dict={
+                    "Train": train_metrics.get_acc(level),
+                    "Validation": val_metrics.get_acc(level),
+                },
+                global_step=epoch
+            )
+            self.get_bl_cf().writer.add_scalars(
+                main_tag=f"{level.capitalize()}/F1-Score",
+                tag_scalar_dict={
+                    "Train": train_metrics.get_f1(level),
+                    "Validation": val_metrics.get_f1(level),
+                },
+                global_step=epoch
+            )
 
     def __str__(self):
         s = ''
-        for i in range(len(self.labels)):
-            s += f"{self.labels[i].capitalize()}  ---  Train Loss: {self.train_loss[i]:.3f} - Train Acc: {self.train_acc[i]:.2f}% - Val Loss: {self.val_loss[i]:.3f} - Val Acc: {self.val_acc[i]:.2f}%\n"
+        s += f"Training - Epoch[{self.epoch}/{self.get_bl_cf().training.epochs}]\n"
+        for level in self.levels:
+            s += f"{level.capitalize()} Level:\n--- Train --- \t\t Loss: {self.train_metrics.get_loss(level):.3f} \t Acc: {self.train_metrics.get_acc(level):.2f}% \t F1-Score: {self.train_metrics.get_f1(level):.3f} \n--- Validation --- \t Loss: {self.val_metrics.get_loss(level):.3f} \t Acc: {self.val_metrics.get_acc(level):.2f}% \t F1-Score: {self.val_metrics.get_f1(level):.3f}\n"
         return s

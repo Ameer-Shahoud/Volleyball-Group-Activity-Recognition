@@ -108,7 +108,7 @@ class _DatasetConfig:
         if not os.path.exists(self.__output_dir):
             os.makedirs(self.__output_dir)
 
-    def get_categories(self, level: ClassificationLevel):
+    def get_categories(self, level: ClassificationLevel | str):
         """
         Retrieves categories for the specified classification level.
 
@@ -118,13 +118,13 @@ class _DatasetConfig:
         Returns:
             list[str]: List of categories for the classification level.
         """
-        return self.__categories.get(level.value)
+        return self.__categories.get(level if isinstance(level, str) else level.value)
 
-    def get_encoded_category(self, level: ClassificationLevel, category: str):
-        return self.__encoded_categories.get(level.value).get(category)
+    def get_encoded_category(self, level: ClassificationLevel | str, category: str):
+        return self.__encoded_categories.get(level if isinstance(level, str) else level.value).get(category)
 
-    def get_decoded_category(self, level: ClassificationLevel, encoded_category: int):
-        return self.__decoded_categories[level.value][encoded_category]
+    def get_decoded_category(self, level: ClassificationLevel | str, encoded_category: int):
+        return self.__decoded_categories[level if isinstance(level, str) else level.value][encoded_category]
 
     def get_pkl_path(self, type: DatasetType):
         return f"{self.__output_dir}/{type.value}.dataset.pkl"

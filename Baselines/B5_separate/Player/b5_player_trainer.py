@@ -11,7 +11,7 @@ class B5PlayerTrainer(SingleLossTrainer):
             checkpoint_path,
             history_path,
             suffix=ClassificationLevel.PLAYER.value,
-            loss_labels=[ClassificationLevel.PLAYER.value]
+            loss_levels=[ClassificationLevel.PLAYER.value]
         )
 
     def _get_dataset_type(self) -> Type[PlayerDataset]:

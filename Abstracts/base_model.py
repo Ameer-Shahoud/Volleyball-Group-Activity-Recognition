@@ -9,6 +9,7 @@ from Utils import cuda
 class _BaseModel(nn.Module, _ConfigMixin, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        _ConfigMixin.__init__(self)
 
     @abstractmethod
     def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
@@ -21,3 +22,7 @@ class _BaseModel(nn.Module, _ConfigMixin, ABC):
             f'model.{suffix}.pth' if suffix else 'model.pth'
         )
         return torch.load(_model_path, map_location=cuda.get_device(), weights_only=False)
+
+    @abstractmethod
+    def _write_graph_to_tensorboard(self) -> None:
+        pass

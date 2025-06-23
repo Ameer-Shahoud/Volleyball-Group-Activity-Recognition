@@ -1,9 +1,11 @@
 import json
 import os
-from Enums.classification_level import ClassificationLevel
-from Enums.dataset_type import DatasetType
-import app_config as cf
+from Types.metric_type import MetricType
+from Types.mode_type import ModeType
+from Utils.logger import Logger
+import config as cf
 import torchvision.transforms as transforms
+from torch.utils.tensorboard.writer import SummaryWriter
 
 # Global baseline configuration object
 _bl_config: '_BLConfig' = None
@@ -38,8 +40,10 @@ class _BLConfig:
 
     def __init__(self, path):
         """Initializes the _BLConfig object by loading the baseline configuration."""
+
         self.json: dict = json.load(open(path, 'r'))
         self.id: str = self.json.get('id')
+        self.title: str = self.json.get('title')
         self.output_dir: str = os.path.join(
             cf.get_config().output_dir,  self.json.get('output_dir'), self.id
         )
@@ -47,7 +51,17 @@ class _BLConfig:
         self.is_joint: bool = self.json.get('is_joint')
         self.dataset: _DatasetConfig = _DatasetConfig(self.json.get('dataset'))
         self.training: _TrainingConfig = _TrainingConfig(
-            self.json.get('training'))
+            self.json.get('training')
+        )
+
+        self.writer = SummaryWriter(
+            os.path.join(self.output_dir, f"{self.id}_tensorboard")
+        )
+        self.logger = Logger(
+            log_dir=self.output_dir,
+            log_name=self.id,
+            writer=self.writer
+        )
 
     def create_baseline_dir(self):
         if not os.path.exists(self.output_dir):
@@ -116,4 +130,25 @@ class _TrainingConfig:
     def __init__(self, training_json: dict):
         self.epochs: int = training_json.get('epochs')
         self.batch_size: int = training_json.get('batch_size')
-        self.learning_rate: int = training_json.get('learning_rate')
+        self.learning_rate: float = training_json.get('learning_rate')
+        self.early_stopping: _EarlyStoppingConfig = _EarlyStoppingConfig(
+            training_json.get('early_stopping')
+        )
+        self.scheduler: _SchedulerConfig = _SchedulerConfig(
+            training_json.get('scheduler')
+        )
+
+
+class _EarlyStoppingConfig:
+    def __init__(self, early_stopping_json: dict):
+        self.metric: MetricType = early_stopping_json.get('metric')
+        self.patience: int = early_stopping_json.get('patience')
+        self.delta: float = early_stopping_json.get('delta')
+        self.mode: ModeType = early_stopping_json.get('mode')
+
+
+class _SchedulerConfig:
+    def __init__(self, scheduler_json: dict):
+        self.patience: int = scheduler_json.get('patience')
+        self.factor: float = scheduler_json.get('factor')
+        self.mode: ModeType = scheduler_json.get('mode')

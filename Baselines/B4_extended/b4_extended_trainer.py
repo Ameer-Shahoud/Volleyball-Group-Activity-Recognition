@@ -10,7 +10,7 @@ class B4ExtendedTrainer(SingleLossTrainer):
         super().__init__(
             checkpoint_path,
             history_path,
-            loss_labels=[ClassificationLevel.IMAGE.value]
+            loss_levels=[ClassificationLevel.IMAGE.value]
         )
 
     def _get_dataset_type(self) -> Type[ImageDataset]:

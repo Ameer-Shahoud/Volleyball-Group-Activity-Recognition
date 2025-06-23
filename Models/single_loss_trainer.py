@@ -1,40 +1,34 @@
 import torch
 from Abstracts.base_trainer import _BaseTrainer
+from Models.metrics import Metrics
+from torch import nn
 
 
 class SingleLossTrainer(_BaseTrainer):
-    def __init__(self, checkpoint_path: str = None, history_path: str = None, suffix: str = None, loss_labels: list[str] = []):
+    def __init__(self, checkpoint_path: str = None, history_path: str = None, suffix: str = None, loss_levels: list[str] = []):
         super().__init__(
             checkpoint_path,
             history_path,
             suffix,
-            loss_labels
+            loss_levels
         )
 
-    def _train_batch_step(self, inputs, labels):
-        loss, correct, total = self._batch_step(
-            inputs, labels, apply_backward=True
-        )
+    def get_criterions(self) -> list[nn.Module]:
+        return [nn.CrossEntropyLoss()]
 
-        self.train_loss[0] += loss
-        self.train_correct[0] += correct
-        self.train_total[0] += total
+    def get_optimizers(self) -> list[torch.optim.Optimizer]:
+        return [torch.optim.Adam(
+            (p for p in self._model.parameters() if p.requires_grad),
+            lr=self.get_bl_cf().training.learning_rate
+        )]
 
-    def _eval_batch_step(self, inputs, labels):
-        loss, correct, total = self._batch_step(inputs, labels)
+    def get_schedulers(self) -> list[torch.optim.lr_scheduler.LRScheduler]:
+        config = self.get_bl_cf().training.scheduler
+        return [torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self._optimizers[0], mode=config.mode, factor=config.factor, patience=config.patience
+        )]
 
-        self.val_loss[0] += loss
-        self.val_correct[0] += correct
-        self.val_total[0] += total
-
-    def _test_batch_step(self, inputs, labels):
-        loss, correct, total = self._batch_step(inputs, labels)
-
-        self.test_loss[0] += loss
-        self.test_correct[0] += correct
-        self.test_total[0] += total
-
-    def _batch_step(self, inputs: torch.Tensor, labels: torch.Tensor, apply_backward=False) -> tuple:
+    def _batch_step(self, metrics: Metrics, inputs: torch.Tensor, labels: torch.Tensor, apply_backward=False):
         outputs: torch.Tensor = self._model(inputs)
         batch_size = outputs.shape[0]
         outputs = outputs.view(batch_size, -1)
@@ -45,9 +39,11 @@ class SingleLossTrainer(_BaseTrainer):
             self._optimizers[0].step()
 
         loss = loss.item()
-
         _, predicted = outputs.max(1)
-        correct = (predicted == labels).sum().item()
-        total = labels.size(0)
 
-        return loss, correct, total
+        metrics.update_metrics(
+            level=self._loss_levels[0],
+            loss=loss,
+            predicted=predicted,
+            labels=labels
+        )

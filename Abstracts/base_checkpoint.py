@@ -1,16 +1,22 @@
 from abc import ABC, abstractmethod
 import os
-import pickle
 from typing import Any
-
 import torch
-
 from Abstracts.config_mixin import _ConfigMixin
+from Models.metrics import Metrics
 from Utils import cuda
 
 
 class _BaseCheckpoint(_ConfigMixin, ABC):
-    def __init__(self, input_path: str = None, suffix: str = None, epoch=0, model_state: dict[str, Any] = {}, **custom_state):
+    def __init__(
+        self,
+        input_path: str = None,
+        suffix: str = None, epoch=0,
+        model_state: dict[str, Any] = {},
+        best_model_state: dict[str, Any] = {},
+        best_model_metrics: Metrics = None,
+        **custom_state
+    ):
         self._input_path = input_path if input_path else os.path.join(
             self.get_bl_cf().output_dir,
             f'checkpoint.{suffix}.pth' if suffix else 'checkpoint.pth'
@@ -21,9 +27,13 @@ class _BaseCheckpoint(_ConfigMixin, ABC):
         )
         self.epoch = epoch
         self.model_state = model_state
+        self.best_model_state = best_model_state
+        self.best_model_metrics = best_model_metrics
         self._initial_state = {
             'epoch': epoch,
             'model_state': model_state,
+            'best_model_state': best_model_state,
+            'best_model_metrics': best_model_metrics,
             **custom_state
         }
         self.update_state(**self._initial_state)
@@ -49,7 +59,8 @@ class _BaseCheckpoint(_ConfigMixin, ABC):
         try:
             state_dict = torch.load(
                 path,
-                map_location=cuda.get_device()
+                map_location=cuda.get_device(),
+                weights_only=False,
             )
             self.update_state(**state_dict)
             return self

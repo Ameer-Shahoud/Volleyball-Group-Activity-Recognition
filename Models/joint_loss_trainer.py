@@ -15,7 +15,7 @@ class JointLossTrainer(_BaseTrainer):
             checkpoint_path,
             history_path,
             suffix,
-            loss_labels=[
+            loss_levels=[
                 ClassificationLevel.PLAYER.value,
                 ClassificationLevel.IMAGE.value
             ]
@@ -45,10 +45,11 @@ class JointLossTrainer(_BaseTrainer):
         pass
 
     def get_schedulers(self) -> list[lr_scheduler.LRScheduler]:
-        return [lr_scheduler.ReduceLROnPlateau(
-            self._optimizers[0], mode='min', factor=0.1, patience=2
-        ), lr_scheduler.ReduceLROnPlateau(
-            self._optimizers[1], mode='min', factor=0.1, patience=2
+        config = self.get_bl_cf().training.scheduler
+        return [torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self._optimizers[0], mode=config.mode, factor=config.factor, patience=config.patience
+        ), torch.optim.lr_scheduler.ReduceLROnPlateau(
+            self._optimizers[0], mode=config.mode, factor=config.factor, patience=config.patience
         )]
 
     def _train_batch_step(self, inputs, labels):

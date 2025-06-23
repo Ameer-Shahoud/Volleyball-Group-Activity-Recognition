@@ -13,7 +13,7 @@ class B3ImgTrainer(SingleLossTrainer):
             checkpoint_path,
             history_path,
             suffix=ClassificationLevel.IMAGE.value,
-            loss_labels=[ClassificationLevel.IMAGE.value]
+            loss_levels=[ClassificationLevel.IMAGE.value]
         )
 
     def _get_dataset_type(self) -> Type[ImagePlayersDataset]:
