@@ -35,6 +35,7 @@ class SingleLossTrainer(_BaseTrainer):
         loss: torch.Tensor = self._criterions[0](outputs, labels)
 
         if apply_backward:
+            self._optimizers[0].zero_grad()
             loss.backward()
             self._optimizers[0].step()
 
