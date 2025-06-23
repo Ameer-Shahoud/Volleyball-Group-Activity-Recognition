@@ -19,10 +19,6 @@ class B1Model(_BaseModel):
         self.get_bl_cf().writer.add_graph(
             self,
             input_to_model=torch.randn(
-                self.get_bl_cf().training.batch_size,
-                self.get_bl_cf().dataset.get_seq_len() if self.get_bl_cf().is_temporal else 1,
-                3,
-                224,
-                224
+                self.get_bl_cf().training.batch_size, 1, 3, 224, 224
             )
         )
