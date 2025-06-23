@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TypeAlias
 
 
-type MetricType = Literal["loss", 'acc', 'f1']
+MetricType: TypeAlias = Literal["loss", 'acc', 'f1']

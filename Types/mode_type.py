@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TypeAlias
 
 
-type ModeType = Literal['min', 'max']
+ModeType: TypeAlias = Literal['min', 'max']
