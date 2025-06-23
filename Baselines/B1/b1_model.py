@@ -20,9 +20,8 @@ class B1Model(_BaseModel):
         return self.model(x)[1 if return_features else 0]
 
     def _write_graph_to_tensorboard(self):
-        self.to(get_device())
         self.get_bl_cf().writer.add_graph(
-            self,
+            self.to(get_device()),
             input_to_model=torch.randn(
                 self.get_bl_cf().training.batch_size,
                 self.get_bl_cf().dataset.get_seq_len() if self.get_bl_cf().is_temporal else 1,
