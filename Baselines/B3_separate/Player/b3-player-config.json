@@ -5,8 +5,8 @@
     "is_joint": false,
     "is_temporal": false,
     "dataset": {
-        "past_frames_count": 0,
-        "post_frames_count": 0,
+        "past_frames_count": 1,
+        "post_frames_count": 1,
         "preprocess": {
             "transforms": [
                 {
@@ -41,6 +41,17 @@
     "training": {
         "epochs": 30,
         "batch_size": 64,
-        "learning_rate": 0.001
+        "learning_rate": 0.001,
+        "early_stopping": {
+            "metric": "f1",
+            "patience": 5,
+            "delta": 0,
+            "mode": "max"
+        },
+        "scheduler": {
+            "patience": 3,
+            "factor": 0.1,
+            "mode": "min"
+        }
     }
 }
