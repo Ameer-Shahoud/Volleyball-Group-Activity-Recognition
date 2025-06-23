@@ -20,7 +20,7 @@ class Metrics(_ConfigMixin):
         self.__correct = [0] * l
         self.__total = [0] * l
         self.__f1 = [
-            F1Score(task='multiclass', num_classes=num).to(get_device()) for num in num_classes
+            F1Score(task='multiclass', num_classes=num, average='weighted').to(get_device()).eval() for num in num_classes
         ]
 
         self.__labels = [torch.Tensor([]).to(get_device())] * l
@@ -60,7 +60,7 @@ class Metrics(_ConfigMixin):
 
     def get_f1(self, level: str):
         idx = self.__get_idx(level)
-        return self.__f1[idx].compute()
+        return self.__f1[idx].compute().cpu()
 
     def get_confusion_matrix(self, level: str, normalized=True):
         idx = self.__get_idx(level)
@@ -78,8 +78,8 @@ class Metrics(_ConfigMixin):
     def get_classification_report(self, level: str):
         idx = self.__get_idx(level)
         return classification_report(
-            y_true=self.__labels[idx].numpy(),
-            y_pred=self.__predicted[idx].numpy(),
+            y_true=self.__labels[idx].cpu().numpy(),
+            y_pred=self.__predicted[idx].cpu().numpy(),
             labels=self.get_cf().dataset.get_categories(level),
             target_names=self.get_cf().dataset.get_categories(level),
         )
