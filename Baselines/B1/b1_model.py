@@ -2,11 +2,10 @@ import torch
 from Enums.classification_level import ClassificationLevel
 from Abstracts.base_model import _BaseModel
 from Modules.backbone import BackboneModel
-from Utils.cuda import get_device
 
 
 class B1Model(_BaseModel):
-    def __init__(self, write_graph_to_tensorboard=True):
+    def __init__(self, write_graph_to_tensorboard=False):
         super().__init__()
         self.model = BackboneModel(level=ClassificationLevel.IMAGE)
         # .set_backbone_requires_grad(False) \
@@ -17,11 +16,11 @@ class B1Model(_BaseModel):
             self._write_graph_to_tensorboard()
 
     def forward(self, x: torch.Tensor, return_features=False):
-        return self.to(get_device()).model(x)[1 if return_features else 0]
+        return self.model(x)[1 if return_features else 0]
 
     def _write_graph_to_tensorboard(self):
         self.get_bl_cf().writer.add_graph(
-            self.to(get_device()),
+            self,
             input_to_model=torch.randn(
                 self.get_bl_cf().training.batch_size,
                 self.get_bl_cf().dataset.get_seq_len() if self.get_bl_cf().is_temporal else 1,
