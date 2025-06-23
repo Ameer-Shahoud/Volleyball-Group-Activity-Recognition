@@ -77,7 +77,7 @@ class Metrics(_ConfigMixin):
             if normalized:
                 cm = cm.float() / cm.sum(dim=1, keepdim=True).clamp(min=1e-6)
 
-            return cm
+            return cm.cpu()
 
     def get_classification_report(self, level: str):
         idx = self.__get_idx(level)

@@ -78,9 +78,9 @@ class History(_BaseHistory):
 
         plt.tight_layout()
         plt.savefig(self._fig_output_path)
+        plt.show()
         if write_fig_to_tensorboard:
             self.get_bl_cf().writer.add_figure("History figures", fig)
-        plt.show()
 
 
 class HistoryItem(_BaseHistoryItem):
