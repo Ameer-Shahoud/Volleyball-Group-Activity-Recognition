@@ -83,9 +83,9 @@ class Metrics(_ConfigMixin):
     def get_classification_report(self, level: str):
         idx = self.__get_idx(level)
         return classification_report(
-            y_true=self.__labels[idx].cpu().numpy(),
-            y_pred=self.__predicted[idx].cpu().numpy(),
-            labels=self.get_cf().dataset.get_categories(level),
+            y_true=self.__labels[idx].cpu().int().tolist(),
+            y_pred=self.__predicted[idx].cpu().int().tolist(),
+            labels=range(len(self.get_cf().dataset.get_categories(level))),
             target_names=self.get_cf().dataset.get_categories(level),
         )
 

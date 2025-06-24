@@ -33,11 +33,11 @@ class JointLossTrainer(_BaseTrainer):
         params = self.get_parameters()
         return [
             optim.Adam(
-                params[0],
+                (p for p in params[0] if p.requires_grad),
                 lr=self.get_bl_cf().training.learning_rate
             ),
             optim.Adam(
-                params[1],
+                (p for p in params[1] if p.requires_grad),
                 lr=self.get_bl_cf().training.learning_rate
             )
         ]
@@ -91,7 +91,7 @@ class JointLossTrainer(_BaseTrainer):
         img_loss = img_loss.item()
         _, img_predicted = img_outputs.max(1)
         metrics.update_metrics(
-            level=self._loss_levels[0],
+            level=self._loss_levels[1],
             loss=img_loss,
             predicted=img_predicted,
             labels=img_labels
