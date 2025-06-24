@@ -7,8 +7,8 @@ class ClassifierHead(nn.Module):
         input_dim=2048,
         hidden_dim=512,
         num_classes: int = None,
-        with_batch_norm=True,
-        with_dropout=True,
+        with_batch_norm=False,
+        with_dropout=False,
         dropout_rate=0.5
     ):
         super().__init__()
