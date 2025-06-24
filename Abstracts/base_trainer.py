@@ -167,7 +167,8 @@ class _BaseTrainer(_ConfigMixin, ABC):
                     f"Early stopping triggered at epoch {epoch}!"
                 )
                 break
-
+            self.train_metrics.reset()
+            self.val_metrics.reset()
             self._train_mode()
 
             progress_bar = tqdm(self.train_loader,
@@ -235,9 +236,6 @@ class _BaseTrainer(_ConfigMixin, ABC):
             )
         )
 
-        self.train_metrics.reset()
-        self.val_metrics.reset()
-
     def test(self):
         self._eval_mode()
         self.test_metrics.reset()
@@ -252,7 +250,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
     def _on_test_full_step(self) -> None:
         l = range(len(self._loss_levels))
         test_results = TestResults(
-            test_metrics=self.test_metrics,
+            test_metrics=self.test_metrics.copy(),
             suffix=self._suffix,
             levels=self._loss_levels
         )

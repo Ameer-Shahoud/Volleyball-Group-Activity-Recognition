@@ -17,4 +17,4 @@ class B3JointTrainer(JointLossTrainer):
 
     def get_parameters(self) -> tuple[Iterator[nn.Parameter]]:
         model: B3JointModel = self._model
-        return model.player_base.parameters(), model.img_head.parameters()
+        return (p for p in model.player_base.parameters() if p.requires_grad), model.img_head.parameters()

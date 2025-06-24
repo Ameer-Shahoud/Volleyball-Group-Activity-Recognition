@@ -33,11 +33,11 @@ class JointLossTrainer(_BaseTrainer):
         params = self.get_parameters()
         return [
             optim.Adam(
-                (p for p in params[0] if p.requires_grad),
+                params[0],
                 lr=self.get_bl_cf().training.learning_rate
             ),
             optim.Adam(
-                (p for p in params[1] if p.requires_grad),
+                params[1],
                 lr=self.get_bl_cf().training.learning_rate
             )
         ]
