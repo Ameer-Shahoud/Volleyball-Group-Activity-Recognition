@@ -25,3 +25,15 @@ class B4Model(_BaseModel):
     def forward(self, x: torch.Tensor):
         features = self.pretrained_img_model(x, return_features=True)
         return self.lstm_head(features)[0]
+
+    def write_graph_to_tensorboard(self):
+        self.get_bl_cf().writer.add_graph(
+            self,
+            input_to_model=torch.randn(
+                self.get_bl_cf().training.batch_size,
+                self.get_bl_cf().dataset.get_seq_len(),
+                3,
+                224,
+                224
+            )
+        )
