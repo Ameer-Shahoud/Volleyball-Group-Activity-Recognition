@@ -42,6 +42,17 @@
     "training": {
         "epochs": 50,
         "batch_size": 64,
-        "learning_rate": 0.001
+        "learning_rate": 0.001,
+        "early_stopping": {
+            "metric": "f1",
+            "patience": 3,
+            "delta": 0,
+            "mode": "max"
+        },
+        "scheduler": {
+            "patience": 3,
+            "factor": 0.1,
+            "mode": "min"
+        }
     }
 }

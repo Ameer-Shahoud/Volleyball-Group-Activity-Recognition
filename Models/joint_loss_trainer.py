@@ -8,6 +8,8 @@ from torch import nn
 import torch.optim as optim
 import torch.optim.lr_scheduler as lr_scheduler
 
+from Models.metrics import Metrics
+
 
 class JointLossTrainer(_BaseTrainer):
     def __init__(self, checkpoint_path: str = None, history_path: str = None, suffix: str = None):
@@ -52,46 +54,7 @@ class JointLossTrainer(_BaseTrainer):
             self._optimizers[0], mode=config.mode, factor=config.factor, patience=config.patience
         )]
 
-    def _train_batch_step(self, inputs, labels):
-        player_loss, player_correct, player_total, img_loss, img_correct, img_total = self._batch_step(
-            inputs, labels, apply_backward=True
-        )
-
-        self.train_loss[0] += player_loss
-        self.train_correct[0] += player_correct
-        self.train_total[0] += player_total
-
-        self.train_loss[1] += img_loss
-        self.train_correct[1] += img_correct
-        self.train_total[1] += img_total
-
-    def _eval_batch_step(self, inputs, labels):
-        player_loss, player_correct, player_total, img_loss, img_correct, img_total = self._batch_step(
-            inputs, labels
-        )
-
-        self.val_loss[0] += player_loss
-        self.val_correct[0] += player_correct
-        self.val_total[0] += player_total
-
-        self.val_loss[1] += img_loss
-        self.val_correct[1] += img_correct
-        self.val_total[1] += img_total
-
-    def _test_batch_step(self, inputs, labels):
-        player_loss, player_correct, player_total, img_loss, img_correct, img_total = self._batch_step(
-            inputs, labels
-        )
-
-        self.test_loss[0] += player_loss
-        self.test_correct[0] += player_correct
-        self.test_total[0] += player_total
-
-        self.test_loss[1] += img_loss
-        self.test_correct[1] += img_correct
-        self.test_total[1] += img_total
-
-    def _batch_step(self, inputs: torch.Tensor, labels: tuple[torch.Tensor], apply_backward=False) -> tuple:
+    def _batch_step(self, metrics: Metrics, inputs: torch.Tensor, labels: tuple[torch.Tensor], apply_backward=False):
         player_labels = labels[0]
         img_labels = labels[1]
 
@@ -111,20 +74,25 @@ class JointLossTrainer(_BaseTrainer):
         img_loss: torch.Tensor = self._criterions[1](img_outputs, img_labels)
 
         if apply_backward:
-            total_loss = player_loss + img_loss
             [o.zero_grad() for o in self._optimizers]
+            total_loss = player_loss + img_loss
             total_loss.backward()
             [o.step() for o in self._optimizers]
 
         player_loss = player_loss.item()
         _, player_predicted = player_outputs.max(1)
-        player_correct = (player_predicted ==
-                          player_labels).sum().item()
-        player_total = player_labels.size(0)
+        metrics.update_metrics(
+            level=self._loss_levels[0],
+            loss=player_loss,
+            predicted=player_predicted,
+            labels=player_labels
+        )
 
         img_loss = img_loss.item()
         _, img_predicted = img_outputs.max(1)
-        img_correct = (img_predicted == img_labels).sum().item()
-        img_total = img_labels.size(0)
-
-        return player_loss, player_correct, player_total, img_loss, img_correct, img_total
+        metrics.update_metrics(
+            level=self._loss_levels[0],
+            loss=img_loss,
+            predicted=img_predicted,
+            labels=img_labels
+        )

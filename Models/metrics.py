@@ -1,3 +1,4 @@
+import pickle
 from sklearn.metrics import classification_report
 import torch
 from torchmetrics import ConfusionMatrix, F1Score
@@ -94,3 +95,6 @@ class Metrics(_ConfigMixin):
             'acc': self.get_acc(level),
             'f1': self.get_f1(level),
         }[metric]
+
+    def copy(self) -> "Metrics":
+        return pickle.loads(pickle.dumps(self))

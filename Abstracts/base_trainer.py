@@ -229,8 +229,8 @@ class _BaseTrainer(_ConfigMixin, ABC):
         self._history.add(
             HistoryItem(
                 epoch+1,
-                self.train_metrics,
-                self.val_metrics,
+                self.train_metrics.copy(),
+                self.val_metrics.copy(),
                 levels=self._loss_levels
             )
         )
