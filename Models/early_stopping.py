@@ -41,3 +41,11 @@ class EarlyStopping(_ConfigMixin):
             self.counter += 1
             if self.counter >= self.patience:
                 self.early_stop = True
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        _patience = self.get_bl_cf().training.early_stopping.patience
+        self.patience = _patience if _patience else self.patience
+
+        _delta = self.get_bl_cf().training.early_stopping.delta
+        self.delta = _delta if _delta else self.delta
