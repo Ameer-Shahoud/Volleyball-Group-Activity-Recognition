@@ -26,7 +26,8 @@ class ImageDataset(_BaseDataset):
                         label=c.get_category(),
                     )]
                 if self.get_bl_cf().is_temporal:
-                    dataset.append(items)
+                    if len(items) == self.get_bl_cf().dataset.get_seq_len():
+                        dataset.append(items)
                 else:
                     dataset.extend(map(lambda x: [x], items))
         return dataset
