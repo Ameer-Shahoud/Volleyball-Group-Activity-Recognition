@@ -41,7 +41,7 @@
     },
     "training": {
         "epochs": 20,
-        "batch_size": 4,
+        "batch_size": 8,
         "learning_rate": 0.001,
         "early_stopping": {
             "metric": "f1",

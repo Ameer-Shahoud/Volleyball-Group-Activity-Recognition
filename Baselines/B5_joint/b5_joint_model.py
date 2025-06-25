@@ -10,16 +10,11 @@ from Modules.lstm_head import LSTMHead
 class B5JointModel(_BaseModel):
     def __init__(self):
         super().__init__()
-        self.player_base = BackboneModel(
-            level=ClassificationLevel.PLAYER,
-            backbone=models.efficientnet_b0(
-                weights=models.EfficientNet_B0_Weights.DEFAULT
-            ),
-            backbone_fc_layer='classifier'
-        )
-        # .set_backbone_requires_grad(False) \
-        # .set_backbone_layer_requires_grad('layer4', True) \
-        # .set_backbone_layer_requires_grad('fc', True)
+        self.player_base = BackboneModel(level=ClassificationLevel.PLAYER)\
+            .set_backbone_requires_grad(False) \
+            .set_backbone_layer_requires_grad('layer3', True) \
+            .set_backbone_layer_requires_grad('layer4', True) \
+            .set_backbone_layer_requires_grad('fc', True)
 
         self.player_lstm = LSTMHead(
             input_dim=1280,
