@@ -17,7 +17,7 @@ class B5JointModel(_BaseModel):
             .set_backbone_layer_requires_grad('fc', True)
 
         self.player_lstm = LSTMHead(
-            input_dim=1280,
+            input_dim=2048,
             hidden_dim=512,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.PLAYER)
