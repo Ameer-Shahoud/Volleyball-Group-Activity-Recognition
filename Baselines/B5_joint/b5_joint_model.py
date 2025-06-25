@@ -12,8 +12,8 @@ class B5JointModel(_BaseModel):
         super().__init__()
         self.player_base = BackboneModel(
             level=ClassificationLevel.PLAYER,
-            backbone=models.efficientnet_b1(
-                weights=models.EfficientNet_B1_Weights.DEFAULT
+            backbone=models.efficientnet_b0(
+                weights=models.EfficientNet_B0_Weights.DEFAULT
             ),
             backbone_fc_layer='classifier'
         )
