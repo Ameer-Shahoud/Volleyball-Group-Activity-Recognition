@@ -9,10 +9,10 @@ from Modules.lstm_head import LSTMHead
 class B5JointModel(_BaseModel):
     def __init__(self):
         super().__init__()
-        self.player_base = BackboneModel(level=ClassificationLevel.PLAYER) \
-            .set_backbone_requires_grad(False) \
-            .set_backbone_layer_requires_grad('layer4', True) \
-            .set_backbone_layer_requires_grad('fc', True)
+        self.player_base = BackboneModel(level=ClassificationLevel.PLAYER)
+        # .set_backbone_requires_grad(False) \
+        # .set_backbone_layer_requires_grad('layer4', True) \
+        # .set_backbone_layer_requires_grad('fc', True)
 
         self.player_lstm = LSTMHead(
             num_classes=len(self.get_cf().dataset.get_categories(
