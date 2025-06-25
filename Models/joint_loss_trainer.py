@@ -69,13 +69,13 @@ class JointLossTrainer(_BaseTrainer):
 
         player_loss: torch.Tensor = self._criterions[0](
             player_outputs, player_labels
-        ) / players_count
+        )
 
         img_loss: torch.Tensor = self._criterions[1](img_outputs, img_labels)
 
         if apply_backward:
             [o.zero_grad() for o in self._optimizers]
-            total_loss = player_loss + img_loss
+            total_loss = 0.3 * player_loss + 0.7 * img_loss
             total_loss.backward()
             [o.step() for o in self._optimizers]
 
