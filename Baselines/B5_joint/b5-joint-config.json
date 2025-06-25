@@ -13,8 +13,8 @@
                 {
                     "type": "resize",
                     "args": {
-                        "width": 224,
-                        "height": 224
+                        "width": 240,
+                        "height": 240
                     }
                 },
                 {

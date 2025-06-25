@@ -12,23 +12,26 @@ class B5JointModel(_BaseModel):
         super().__init__()
         self.player_base = BackboneModel(
             level=ClassificationLevel.PLAYER,
-            backbone=models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
+            backbone=models.efficientnet_b1(
+                weights=models.EfficientNet_B1_Weights.DEFAULT
+            ),
+            backbone_fc_layer='classifier'
         )
         # .set_backbone_requires_grad(False) \
         # .set_backbone_layer_requires_grad('layer4', True) \
         # .set_backbone_layer_requires_grad('fc', True)
 
         self.player_lstm = LSTMHead(
-            input_dim=512,
-            hidden_dim=256,
+            input_dim=1280,
+            hidden_dim=512,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.PLAYER)
             )
         )
 
         self.img_head = CropsClassifierHead(
-            input_dim=256,
-            hidden_dim=128,
+            input_dim=512,
+            hidden_dim=256,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.IMAGE)
             )

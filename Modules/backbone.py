@@ -7,18 +7,22 @@ from torchvision import models
 
 
 class BackboneModel(nn.Module, _ConfigMixin):
-    def __init__(self, level: ClassificationLevel, backbone: nn.Module = None, *args, **kwargs):
+    def __init__(self, level: ClassificationLevel, *args, backbone: nn.Module = None, backbone_fc_layer: str = 'fc', **kwargs):
         super().__init__(*args, **kwargs)
         self.backbone = backbone if backbone else models.resnet50(
             weights=models.ResNet50_Weights.DEFAULT
         )
 
-        self.__in_features = self.backbone.fc.in_features
+        self.__in_features = self._get_fc_in_features(
+            getattr(self.backbone, backbone_fc_layer)
+        )
+
         self.classifier = nn.Linear(
             self.__in_features,
             len(self.get_cf().dataset.get_categories(level))
         )
-        self.backbone.fc = nn.Identity()
+
+        setattr(self.backbone, backbone_fc_layer, nn.Identity())
 
     def forward(self, x: torch.Tensor):
         batch_size, frames_count, channels, width, height = x.shape
@@ -44,3 +48,11 @@ class BackboneModel(nn.Module, _ConfigMixin):
         for param in self.classifier.parameters():
             param.requires_grad = requires_grad
         return self.set_backbone_requires_grad(requires_grad=requires_grad)
+
+    def _get_fc_in_features(self, fc: nn.Module):
+        if isinstance(fc, nn.Sequential):
+            for layer in reversed(fc):
+                if isinstance(layer, nn.Linear):
+                    return layer.in_features
+        elif isinstance(fc, nn.Linear):
+            return fc.in_features
