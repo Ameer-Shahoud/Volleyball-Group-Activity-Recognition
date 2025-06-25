@@ -1,4 +1,5 @@
 import torch
+from torchvision import models
 from Enums.classification_level import ClassificationLevel
 from Abstracts.base_model import _BaseModel
 from Modules.backbone import BackboneModel
@@ -9,7 +10,10 @@ from Modules.lstm_head import LSTMHead
 class B5JointModel(_BaseModel):
     def __init__(self):
         super().__init__()
-        self.player_base = BackboneModel(level=ClassificationLevel.PLAYER)
+        self.player_base = BackboneModel(
+            level=ClassificationLevel.PLAYER,
+            backbone=models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
+        )
         # .set_backbone_requires_grad(False) \
         # .set_backbone_layer_requires_grad('layer4', True) \
         # .set_backbone_layer_requires_grad('fc', True)
