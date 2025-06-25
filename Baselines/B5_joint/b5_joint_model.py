@@ -19,14 +19,16 @@ class B5JointModel(_BaseModel):
         # .set_backbone_layer_requires_grad('fc', True)
 
         self.player_lstm = LSTMHead(
+            input_dim=512,
+            hidden_dim=256,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.PLAYER)
             )
         )
 
         self.img_head = CropsClassifierHead(
-            input_dim=512,
-            hidden_dim=256,
+            input_dim=256,
+            hidden_dim=128,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.IMAGE)
             )
