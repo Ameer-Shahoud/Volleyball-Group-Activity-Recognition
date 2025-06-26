@@ -1,7 +1,7 @@
 {
-    "id": "B5_separate",
+    "id": "B6_separate",
     "description": "This Baseline finetuned ResNet50 to classify the whole image or frame according to each player class bla bla bla...",
-    "output_dir": "B5",
+    "output_dir": "B6",
     "is_joint": false,
     "is_temporal": true,
     "dataset": {
@@ -40,7 +40,7 @@
     },
     "training": {
         "epochs": 30,
-        "batch_size": 8,
+        "batch_size": 32,
         "learning_rate": 0.001,
         "early_stopping": {
             "metric": "f1",
