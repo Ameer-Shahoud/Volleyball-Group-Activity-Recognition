@@ -53,9 +53,9 @@ class ImagePlayersDataset(_BaseDataset):
             except FileNotFoundError:
                 raise FileNotFoundError(f"Image not found at {item.img_path}")
 
-        img_players_tensors = [[torch.Tensor() for _ in img_players[0]]
-                               for __ in img_players
-                               ]
+        img_players_tensors: list[list[torch.Tensor]] = [[]
+                                                         for __ in img_players
+                                                         ]
         label_tensors: list[torch.Tensor] = [None for _ in img_players[0]]
 
         for i in range(len(img_players)):
@@ -67,7 +67,7 @@ class ImagePlayersDataset(_BaseDataset):
                     transformed = transforms.ToTensor()(img_players[i][j][0])
 
                 if len(transformed.shape) == 3:
-                    img_players_tensors[i][j] = transformed
+                    img_players_tensors[i] += [transformed]
 
                 if not label_tensors[j]:
                     label = torch.Tensor(
