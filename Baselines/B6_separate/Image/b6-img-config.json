@@ -5,6 +5,7 @@
     "is_joint": false,
     "is_temporal": true,
     "dataset": {
+        "filter_missing_players_boxes_frames": true,
         "past_frames_count": 4,
         "post_frames_count": 4,
         "preprocess": {
