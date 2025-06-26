@@ -13,12 +13,12 @@ from torch.utils.tensorboard.writer import SummaryWriter
 _bl_config: '_BLConfig' = None
 
 
-def init_bl_config(path: str, config_patch: dict = None):
+def init_bl_config(path: str, config_override_patch: dict = None):
     """Initializes the baseline configuration from a JSON file."""
     global _bl_config
     _bl_config = _BLConfig(path)
-    if config_patch:
-        _bl_config.patch_state(state=config_patch)
+    if config_override_patch:
+        _bl_config.patch_state(state=config_override_patch)
 
 
 def get_bl_config():
