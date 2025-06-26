@@ -1,5 +1,5 @@
 from typing import Type
-from Baselines.B6_Separate.Image.b6_img_model import B6ImgModel
+from Baselines.B6_separate.Image.b6_img_model import B6ImgModel
 from Enums.classification_level import ClassificationLevel
 from Models.image_players_dataset import ImagePlayersDataset
 from Models.single_loss_trainer import SingleLossTrainer
