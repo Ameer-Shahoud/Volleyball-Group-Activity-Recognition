@@ -66,7 +66,8 @@ class ImagePlayersDataset(_BaseDataset):
                 else:
                     transformed = transforms.ToTensor()(img_players[i][j][0])
 
-                img_players_tensors[i][j] = transformed
+                if len(transformed.shape) == 3:
+                    img_players_tensors[i][j] = transformed
 
                 if not label_tensors[j]:
                     label = torch.Tensor(
