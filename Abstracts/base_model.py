@@ -11,10 +11,6 @@ class _BaseModel(nn.Module, _ConfigMixin, ABC):
         super().__init__(*args, **kwargs)
         _ConfigMixin.__init__(self)
 
-    @abstractmethod
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor]:
-        pass
-
     @staticmethod
     def load_model(model_path: str = None, suffix: str = None) -> '_BaseModel':
         _model_path = model_path if model_path else os.path.join(
@@ -23,6 +19,15 @@ class _BaseModel(nn.Module, _ConfigMixin, ABC):
         )
         return torch.load(_model_path, map_location=cuda.get_device(), weights_only=False)
 
-    @abstractmethod
     def write_graph_to_tensorboard(self) -> None:
-        pass
+        self.get_bl_cf().writer.add_graph(
+            self,
+            input_to_model=torch.randn(
+                self.get_bl_cf().training.batch_size,
+                self.get_bl_cf().dataset.get_seq_len() if self.get_bl_cf().is_temporal else 1,
+                *([12] if self.get_bl_cf().is_joint else []),
+                3,
+                224,
+                224
+            )
+        )

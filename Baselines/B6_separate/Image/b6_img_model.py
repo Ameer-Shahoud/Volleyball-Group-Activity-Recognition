@@ -52,16 +52,3 @@ class B6ImgModel(_BaseModel):
         img_outputs = self.classifier(lstm_features[:, -1, :])
 
         return img_outputs
-
-    def write_graph_to_tensorboard(self):
-        self.get_bl_cf().writer.add_graph(
-            self,
-            input_to_model=torch.randn(
-                self.get_bl_cf().training.batch_size,
-                self.get_bl_cf().dataset.get_seq_len(),
-                12,
-                3,
-                224,
-                224
-            )
-        )

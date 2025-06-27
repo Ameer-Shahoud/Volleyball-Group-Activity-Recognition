@@ -14,11 +14,3 @@ class B3PlayerModel(_BaseModel):
 
     def forward(self, x: torch.Tensor, return_features=False):
         return self.model(x)[1 if return_features else 0]
-
-    def write_graph_to_tensorboard(self):
-        self.get_bl_cf().writer.add_graph(
-            self,
-            input_to_model=torch.randn(
-                self.get_bl_cf().training.batch_size, 1, 3, 224, 224
-            )
-        )

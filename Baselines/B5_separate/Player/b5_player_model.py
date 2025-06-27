@@ -23,15 +23,3 @@ class B5PlayerModel(_BaseModel):
     def forward(self, x: torch.Tensor, return_features=False):
         _, features = self.player_model(x)
         return self.lstm_head(features)[1 if return_features else 0]
-
-    def write_graph_to_tensorboard(self):
-        self.get_bl_cf().writer.add_graph(
-            self,
-            input_to_model=torch.randn(
-                self.get_bl_cf().training.batch_size,
-                self.get_bl_cf().dataset.get_seq_len(),
-                3,
-                224,
-                224
-            )
-        )

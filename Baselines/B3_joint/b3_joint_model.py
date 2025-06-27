@@ -34,11 +34,3 @@ class B3JointModel(_BaseModel):
         img_outputs = self.img_head(player_features)
 
         return player_outputs, img_outputs
-
-    def write_graph_to_tensorboard(self):
-        self.get_bl_cf().writer.add_graph(
-            self,
-            input_to_model=torch.randn(
-                self.get_bl_cf().training.batch_size, 1, 12, 3, 224, 224
-            )
-        )
