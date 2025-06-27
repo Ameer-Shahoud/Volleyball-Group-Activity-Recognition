@@ -62,10 +62,7 @@ class JointLossTrainer(_BaseTrainer):
         img_outputs: torch.Tensor
         player_outputs, img_outputs = self._model(inputs)
 
-        batch_size,  players_count = inputs.shape[0], inputs.shape[2]
-
-        player_outputs = player_outputs.view(batch_size*players_count, -1)
-        player_labels = player_labels.view(-1)
+        player_labels = self._transform_player_labels(player_labels.view(-1))
 
         player_loss: torch.Tensor = self._criterions[0](
             player_outputs, player_labels
@@ -96,3 +93,6 @@ class JointLossTrainer(_BaseTrainer):
             predicted=img_predicted,
             labels=img_labels
         )
+
+    def _transform_player_labels(self, player_labels: torch.Tensor):
+        return player_labels
