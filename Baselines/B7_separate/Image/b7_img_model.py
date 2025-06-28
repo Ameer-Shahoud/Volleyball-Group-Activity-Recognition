@@ -20,7 +20,7 @@ class B7ImgModel(_BaseModel):
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(2560, 512, batch_first=True)
+        self.lstm = nn.LSTM(1024, 512, batch_first=True)
 
         self.classifier = ClassifierHead(
             input_dim=512,
@@ -44,7 +44,7 @@ class B7ImgModel(_BaseModel):
         )
 
         total_features = torch.cat(
-            [player_features, player_temporal_features], dim=2
+            [player_features.view(batch_size*players_count, frames_count, 512, 4).mean(dim=-1), player_temporal_features], dim=2
         ).view(batch_size, frames_count, players_count, -1)
 
         pooled_features = self.pool(total_features)

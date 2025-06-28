@@ -26,7 +26,7 @@ class B7JointModel(_BaseModel):
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(2560, 512, batch_first=True)
+        self.lstm = nn.LSTM(2048, 512, batch_first=True)
 
         self.classifier = ClassifierHead(
             input_dim=512,
@@ -53,11 +53,9 @@ class B7JointModel(_BaseModel):
             batch_size*players_count, -1
         )
 
-        total_features = torch.cat(
-            [player_features, player_temporal_features], dim=2
-        ).view(batch_size, frames_count, players_count, -1)
-
-        pooled_features = self.pool(total_features)
+        pooled_features = self.pool(player_features.view(
+            batch_size, frames_count, players_count, -1)
+        )
 
         temporal_features, _ = self.lstm(pooled_features)
 

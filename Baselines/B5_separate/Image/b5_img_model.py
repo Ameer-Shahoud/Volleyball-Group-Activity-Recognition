@@ -17,7 +17,7 @@ class B5ImgModel(_BaseModel):
             p.requires_grad = False
 
         self.img_head = CropsClassifierHead(
-            input_dim=2560,
+            input_dim=1024,
             hidden_dim=512,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.IMAGE)
@@ -38,7 +38,11 @@ class B5ImgModel(_BaseModel):
         )
 
         total_features = torch.cat(
-            [player_features[:, -1, :], player_temporal_features[:, -1, :]], dim=1
+            [
+                player_features[:, -1,
+                                :].view(batch_size*players_count, 512, 4).mean(dim=-1),
+                player_temporal_features[:, -1, :]
+            ], dim=1
         ).view(batch_size, players_count, -1)
 
         img_outputs = self.img_head(total_features)
