@@ -2,10 +2,12 @@ import torch
 from Baselines.B5_separate.Player.b5_player_model import B5PlayerModel
 from Enums.classification_level import ClassificationLevel
 from Abstracts.base_model import _BaseModel
-from Modules.crops_classifier_head import CropsClassifierHead
+from Modules.classifier_head import ClassifierHead
+from Modules.custom_max_pool import CustomMaxPool
+from torch import nn
 
 
-class B5ImgModel(_BaseModel):
+class B7ImgModel(_BaseModel):
     def __init__(self, pretrained_player_model_path: str):
         super().__init__()
 
@@ -16,9 +18,13 @@ class B5ImgModel(_BaseModel):
         for p in self.pretrained_player_model.parameters():
             p.requires_grad = False
 
-        self.img_head = CropsClassifierHead(
-            input_dim=2560,
-            hidden_dim=512,
+        self.pool = CustomMaxPool(dim=1)
+
+        self.lstm = nn.LSTM(2560, 512, batch_first=True)
+
+        self.classifier = ClassifierHead(
+            input_dim=512,
+            hidden_dim=256,
             num_classes=len(self.get_cf().dataset.get_categories(
                 ClassificationLevel.IMAGE)
             )
@@ -38,9 +44,13 @@ class B5ImgModel(_BaseModel):
         )
 
         total_features = torch.cat(
-            [player_features[:, -1, :], player_temporal_features[:, -1, :]], dim=1
-        ).view(batch_size, players_count, -1)
+            [player_features, player_temporal_features], dim=2
+        ).view(batch_size, frames_count, players_count, -1)
 
-        img_outputs = self.img_head(total_features)
+        pooled_features = self.pool(total_features)
+
+        temporal_features, _ = self.lstm(pooled_features)
+
+        img_outputs = self.classifier(temporal_features[:, -1, :])
 
         return img_outputs
