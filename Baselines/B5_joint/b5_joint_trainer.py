@@ -18,4 +18,4 @@ class B5JointTrainer(JointLossTrainer):
 
     def get_parameters(self) -> tuple[Iterator[nn.Parameter]]:
         model: B5JointModel = self._model
-        return chain(model.player_lstm.parameters(), model.player_base.parameters()), model.img_head.parameters()
+        return chain(model.player_classifier.parameters(), model.player_lstm.parameters(), model.player_base.parameters()), model.classifier.parameters()

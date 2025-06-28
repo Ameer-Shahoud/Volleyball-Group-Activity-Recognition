@@ -2,7 +2,7 @@ import torch
 from Baselines.B1.b1_model import B1Model
 from Abstracts.base_model import _BaseModel
 from Enums.classification_level import ClassificationLevel
-from Modules.lstm_head import LSTMHead
+from torch import nn
 
 
 class B4Model(_BaseModel):
@@ -16,12 +16,14 @@ class B4Model(_BaseModel):
         for p in self.pretrained_img_model.parameters():
             p.requires_grad = False
 
-        self.lstm_head = LSTMHead(
-            num_classes=len(self.get_cf().dataset.get_categories(
-                ClassificationLevel.IMAGE)
-            )
+        self.lstm = nn.LSTM(2048, 512, batch_first=True)
+        self.classifier = nn.Linear(
+            512,
+            len(self.get_cf().dataset.get_categories(ClassificationLevel.IMAGE))
         )
 
     def forward(self, x: torch.Tensor):
         features = self.pretrained_img_model(x, return_features=True)
-        return self.lstm_head(features)[0]
+        lstm_out, _ = self.lstm(features)
+        outputs = self.classifier(lstm_out[:, -1, :])
+        return outputs

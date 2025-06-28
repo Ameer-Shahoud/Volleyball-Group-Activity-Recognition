@@ -3,20 +3,27 @@ import torch
 from Enums.classification_level import ClassificationLevel
 from Abstracts.base_model import _BaseModel
 from Modules.backbone import BackboneModel
-from Modules.crops_classifier_head import CropsClassifierHead
+from torch import nn
+
+from Modules.custom_max_pool import CustomMaxPool
 
 
 class B3JointModel(_BaseModel):
     def __init__(self):
         super().__init__()
         self.player_base = BackboneModel(level=ClassificationLevel.PLAYER)
-        # .set_backbone_requires_grad(False) \
-        # .set_backbone_layer_requires_grad('layer4', True) \
-        # .set_backbone_layer_requires_grad('fc', True)
 
-        self.img_head = CropsClassifierHead(
-            num_classes=len(self.get_cf().dataset.get_categories(
-                ClassificationLevel.IMAGE)
+        self.pool = CustomMaxPool(dim=1)
+
+        self.classifier = nn.Sequential(
+            nn.Linear(2048, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(
+                512,
+                len(self.get_cf().dataset.get_categories(
+                    ClassificationLevel.IMAGE)),
             )
         )
 
@@ -31,6 +38,6 @@ class B3JointModel(_BaseModel):
         player_outputs = player_outputs.view(batch_size*players_count, -1)
         player_features = player_features.view(batch_size, players_count, -1)
 
-        img_outputs = self.img_head(player_features)
+        img_outputs = self.classifier(self.pool(player_features))
 
         return player_outputs, img_outputs

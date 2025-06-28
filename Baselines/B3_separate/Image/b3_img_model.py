@@ -2,7 +2,8 @@ import torch
 from Baselines.B3_separate.Player.b3_player_model import B3PlayerModel
 from Enums.classification_level import ClassificationLevel
 from Abstracts.base_model import _BaseModel
-from Modules.crops_classifier_head import CropsClassifierHead
+from Modules.custom_max_pool import CustomMaxPool
+from torch import nn
 
 
 class B3ImgModel(_BaseModel):
@@ -16,9 +17,17 @@ class B3ImgModel(_BaseModel):
         for p in self.pretrained_player_model.parameters():
             p.requires_grad = False
 
-        self.img_head = CropsClassifierHead(
-            num_classes=len(self.get_cf().dataset.get_categories(
-                ClassificationLevel.IMAGE)
+        self.pool = CustomMaxPool(dim=1)
+
+        self.classifier = nn.Sequential(
+            nn.Linear(2048, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(
+                512,
+                len(self.get_cf().dataset.get_categories(
+                    ClassificationLevel.IMAGE)),
             )
         )
 
@@ -33,6 +42,6 @@ class B3ImgModel(_BaseModel):
         )
 
         player_features = player_features.view(batch_size, players_count, -1)
-        img_outputs = self.img_head(player_features)
+        img_outputs = self.classifier(self.pool(player_features))
 
         return img_outputs
