@@ -17,13 +17,9 @@ class B6JointModel(_BaseModel):
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(2048, 1024, batch_first=True)
+        self.lstm = nn.LSTM(2048, 512, batch_first=True)
 
         self.classifier = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Dropout(0.5),
             nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),

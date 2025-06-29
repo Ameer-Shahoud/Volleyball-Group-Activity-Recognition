@@ -16,19 +16,15 @@ class B5JointModel(_BaseModel):
             .set_backbone_layer_requires_grad('layer4', True) \
             .set_backbone_layer_requires_grad('fc', True)
 
-        self.player_lstm = nn.LSTM(2048, 1024, batch_first=True)
+        self.player_lstm = nn.LSTM(2048, 512, batch_first=True)
         self.player_classifier = nn.Linear(
-            1024,
+            512,
             len(self.get_cf().dataset.get_categories(ClassificationLevel.PLAYER))
         )
 
         self.pool = CustomMaxPool(dim=1)
 
         self.classifier = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.BatchNorm1d(512),
-            nn.ReLU(),
-            nn.Dropout(0.5),
             nn.Linear(512, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
