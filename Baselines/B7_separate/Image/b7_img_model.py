@@ -17,19 +17,20 @@ class B7ImgModel(_BaseModel):
         for p in self.pretrained_player_model.parameters():
             p.requires_grad = False
 
-        self.layer_norm = nn.LayerNorm(2048)
+        self.layer_norm_1 = nn.LayerNorm(2048)
+        self.layer_norm_2 = nn.LayerNorm(1024)
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(2048, 1024, batch_first=True)
+        self.lstm = nn.LSTM(1024, 512, batch_first=True)
 
         self.classifier = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.LayerNorm(512),
+            nn.Linear(512, 256),
+            nn.LayerNorm(256),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(
-                512,
+                256,
                 len(self.get_cf().dataset.get_categories(
                     ClassificationLevel.IMAGE)),
             )
@@ -44,23 +45,18 @@ class B7ImgModel(_BaseModel):
         )
 
         _, player_features = self.pretrained_player_model.player_model(x_view)
-        player_features = self.layer_norm(player_features)
+        player_features = self.layer_norm_1(player_features)
 
         player_temporal_features, _ = self.pretrained_player_model.lstm(
             player_features
         )
 
-        total_features = torch.cat(
-            [
-                player_features.view(
-                    batch_size*players_count, frames_count, 1024, 2).mean(dim=-1),
-                player_temporal_features
-            ], dim=2
-        ).view(batch_size, players_count, frames_count, -1).contiguous()
+        player_temporal_features = player_temporal_features.view(
+            batch_size, players_count, frames_count, -1)
 
-        total_features = self.layer_norm(total_features)
+        player_temporal_features = self.layer_norm_2(player_temporal_features)
 
-        pooled_features = self.pool(total_features)
+        pooled_features = self.pool(player_temporal_features)
 
         temporal_features, _ = self.lstm(pooled_features)
 
