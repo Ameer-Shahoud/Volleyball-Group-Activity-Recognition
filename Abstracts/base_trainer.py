@@ -148,7 +148,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
     def _batch_step(self, metrics: Metrics, inputs: torch.Tensor, labels: torch.Tensor, apply_backward=False) -> None:
         pass
 
-    def train(self, override=False):
+    def train(self, override=False, save_best=False):
         self.get_bl_cf().create_baseline_dir()
         self.clear_output()
 
@@ -190,7 +190,7 @@ class _BaseTrainer(_ConfigMixin, ABC):
             self._on_train_epoch_step(epoch)
 
         self.get_bl_cf().logger.log_to_tensorboard()
-        self._save_trained_model()
+        self._save_trained_model(save_best)
 
     def evaluate(self):
         self._eval_mode()
@@ -259,7 +259,10 @@ class _BaseTrainer(_ConfigMixin, ABC):
         test_results.print_classification_report()
         test_results.save()
 
-    def _save_trained_model(self) -> None:
+    def _save_trained_model(self, save_best=False) -> None:
+        if save_best:
+            self._model.load_state_dict(self._checkpoint.best_model_state)
+
         torch.save(self._model, self._model_path)
 
     def _inputs_to_device(self, inputs, labels):

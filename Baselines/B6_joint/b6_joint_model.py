@@ -21,7 +21,7 @@ class B6JointModel(_BaseModel):
 
         self.classifier = nn.Sequential(
             nn.Linear(512, 256),
-            nn.BatchNorm1d(256),
+            nn.LayerNorm(256),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(

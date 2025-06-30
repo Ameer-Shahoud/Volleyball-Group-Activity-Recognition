@@ -17,17 +17,20 @@ class B7ImgModel(_BaseModel):
         for p in self.pretrained_player_model.parameters():
             p.requires_grad = False
 
+        self.layer_norm = nn.LayerNorm(2048)
+
         self.pool = CustomMaxPool(dim=1)
 
         self.lstm = nn.LSTM(2048, 1024, batch_first=True)
 
         self.classifier = nn.Sequential(
+            nn.LayerNorm(1024),
             nn.Linear(1024, 512),
-            nn.BatchNorm1d(512),
+            nn.LayerNorm(512),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(512, 256),
-            nn.BatchNorm1d(256),
+            nn.LayerNorm(256),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(
@@ -46,6 +49,8 @@ class B7ImgModel(_BaseModel):
         )
 
         _, player_features = self.pretrained_player_model.player_model(x_view)
+        player_features = self.layer_norm(player_features)
+
         player_temporal_features, _ = self.pretrained_player_model.lstm(
             player_features
         )
@@ -56,7 +61,9 @@ class B7ImgModel(_BaseModel):
                     batch_size*players_count, frames_count, 1024, 2).mean(dim=-1),
                 player_temporal_features
             ], dim=2
-        ).view(batch_size, players_count, frames_count, -1)
+        ).view(batch_size, players_count, frames_count, -1).contiguous()
+
+        total_features = self.layer_norm(total_features)
 
         pooled_features = self.pool(total_features)
 
