@@ -24,7 +24,6 @@ class B6ImgModel(_BaseModel):
         self.lstm = nn.LSTM(2048, 1024, batch_first=True)
 
         self.classifier = nn.Sequential(
-            nn.LayerNorm(1024),
             nn.Linear(1024, 512),
             nn.LayerNorm(512),
             nn.ReLU(),

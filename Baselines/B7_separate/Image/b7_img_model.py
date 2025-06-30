@@ -24,17 +24,12 @@ class B7ImgModel(_BaseModel):
         self.lstm = nn.LSTM(2048, 1024, batch_first=True)
 
         self.classifier = nn.Sequential(
-            nn.LayerNorm(1024),
             nn.Linear(1024, 512),
             nn.LayerNorm(512),
             nn.ReLU(),
             nn.Dropout(0.5),
-            nn.Linear(512, 256),
-            nn.LayerNorm(256),
-            nn.ReLU(),
-            nn.Dropout(0.5),
             nn.Linear(
-                256,
+                512,
                 len(self.get_cf().dataset.get_categories(
                     ClassificationLevel.IMAGE)),
             )
