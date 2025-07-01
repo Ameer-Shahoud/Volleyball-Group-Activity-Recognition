@@ -17,8 +17,8 @@ class B7ImgModel(_BaseModel):
         for p in self.pretrained_player_model.parameters():
             p.requires_grad = False
 
-        self.layer_norm_1 = nn.LayerNorm(1024)
-        self.layer_norm_2 = nn.LayerNorm(1024)
+        # self.layer_norm_1 = nn.LayerNorm(1024)
+        # self.layer_norm_2 = nn.LayerNorm(1024)
 
         self.pool = CustomMaxPool(dim=1)
 
@@ -26,9 +26,12 @@ class B7ImgModel(_BaseModel):
 
         self.classifier = nn.Sequential(
             nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(
-                512,
+                256,
                 len(self.get_cf().dataset.get_categories(
                     ClassificationLevel.IMAGE)),
             )
@@ -48,7 +51,7 @@ class B7ImgModel(_BaseModel):
             player_features
         )
 
-        player_temporal_features = self.layer_norm_1(player_temporal_features)
+        # player_temporal_features = self.layer_norm_1(player_temporal_features)
 
         total_features = torch.cat(
             [
@@ -61,7 +64,7 @@ class B7ImgModel(_BaseModel):
         pooled_features = self.pool(total_features)
 
         temporal_features, _ = self.lstm(pooled_features)
-        temporal_features = self.layer_norm_2(temporal_features)
+        # temporal_features = self.layer_norm_2(temporal_features)
 
         img_outputs = self.classifier(temporal_features[:, -1, :])
 
