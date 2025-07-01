@@ -17,7 +17,7 @@ class B7ImgModel(_BaseModel):
         for p in self.pretrained_player_model.parameters():
             p.requires_grad = False
 
-        self.layer_norm_1 = nn.LayerNorm(2048)
+        self.layer_norm_1 = nn.LayerNorm(1024)
         self.layer_norm_2 = nn.LayerNorm(1024)
 
         self.pool = CustomMaxPool(dim=1)
@@ -43,13 +43,12 @@ class B7ImgModel(_BaseModel):
         )
 
         _, player_features = self.pretrained_player_model.player_model(x_view)
-        player_features = self.layer_norm_1(player_features)
 
         player_temporal_features, _ = self.pretrained_player_model.lstm(
             player_features
         )
 
-        player_temporal_features = self.layer_norm_2(player_temporal_features)
+        player_temporal_features = self.layer_norm_1(player_temporal_features)
 
         total_features = torch.cat(
             [
@@ -62,6 +61,7 @@ class B7ImgModel(_BaseModel):
         pooled_features = self.pool(total_features)
 
         temporal_features, _ = self.lstm(pooled_features)
+        temporal_features = self.layer_norm_2(temporal_features)
 
         img_outputs = self.classifier(temporal_features[:, -1, :])
 
