@@ -26,6 +26,7 @@ class B7ImgModel(_BaseModel):
 
         self.classifier = nn.Sequential(
             nn.Linear(1024, 512),
+            nn.ReLU(),
             nn.Dropout(0.2),
             nn.Linear(
                 512,
