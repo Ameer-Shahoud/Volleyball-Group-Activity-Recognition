@@ -19,13 +19,11 @@ class B6ImgModel(_BaseModel):
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(2048, 1024, batch_first=True)
+        self.lstm = nn.LSTM(2048, 512, batch_first=True)
 
-        self.layer_norm = nn.LayerNorm(1024)
+        self.layer_norm = nn.LayerNorm(512)
 
         self.classifier = nn.Sequential(
-            nn.Linear(1024, 512),
-            nn.ReLU(),
             nn.Linear(512, 256),
             nn.ReLU(),
             nn.Dropout(0.2),
