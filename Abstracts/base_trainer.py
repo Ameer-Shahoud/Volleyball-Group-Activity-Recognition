@@ -109,7 +109,8 @@ class _BaseTrainer(_ConfigMixin, ABC):
             self._checkpoint.epoch += 1
             self._on_checkpoint_load()
             print('Checkpoint and history loaded successfully.')
-        except:
+        except Exception as e:
+            print(e)
             self._history.reset()
             self._checkpoint.reset()
             print('Checkpoint and history loading failed.')
