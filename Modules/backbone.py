@@ -55,6 +55,7 @@ class BackboneModel(nn.Module, _ConfigMixin):
                 m.eval()
                 m.weight.requires_grad = False
                 m.bias.requires_grad = False
+        return self
 
     def _get_fc_in_features(self, fc: nn.Module):
         if isinstance(fc, nn.Sequential):
