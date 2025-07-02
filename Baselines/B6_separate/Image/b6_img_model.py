@@ -21,7 +21,7 @@ class B6ImgModel(_BaseModel):
 
         self.lstm = nn.LSTM(2048, 512, batch_first=True)
 
-        self.layer_norm = nn.LayerNorm(512)
+        # self.layer_norm = nn.LayerNorm(512)
 
         self.classifier = nn.Sequential(
             nn.Linear(512, 256),
@@ -52,7 +52,7 @@ class B6ImgModel(_BaseModel):
 
         lstm_features, _ = self.lstm(pooled_features)
 
-        lstm_features = self.layer_norm(lstm_features)
+        # lstm_features = self.layer_norm(lstm_features)
 
         img_outputs = self.classifier(lstm_features[:, -1, :])
 
