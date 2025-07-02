@@ -49,6 +49,13 @@ class BackboneModel(nn.Module, _ConfigMixin):
             param.requires_grad = requires_grad
         return self.set_backbone_requires_grad(requires_grad=requires_grad)
 
+    def freeze_bn_layers(self):
+        for m in self.backbone.modules():
+            if isinstance(m, nn.BatchNorm2d):
+                m.eval()
+                m.weight.requires_grad = False
+                m.bias.requires_grad = False
+
     def _get_fc_in_features(self, fc: nn.Module):
         if isinstance(fc, nn.Sequential):
             for layer in reversed(fc):

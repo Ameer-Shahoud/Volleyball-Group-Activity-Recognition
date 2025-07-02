@@ -21,9 +21,9 @@ class B6ImgModel(_BaseModel):
 
         self.lstm = nn.LSTM(2048, 1024, batch_first=True)
 
-        self.layer_norm = nn.LayerNorm(1024)
-
         self.classifier = nn.Sequential(
+            nn.Linear(2048, 1024),
+            nn.ReLU(),
             nn.Linear(1024, 512),
             nn.Dropout(0.2),
             nn.Linear(
@@ -51,8 +51,14 @@ class B6ImgModel(_BaseModel):
 
         lstm_features, _ = self.lstm(pooled_features)
 
-        lstm_features = self.layer_norm(lstm_features)
+        total_features = torch.cat(
+            [
+                pooled_features.view(
+                    batch_size, frames_count, 1024, 2).mean(dim=-1),
+                lstm_features
+            ], dim=2
+        )
 
-        img_outputs = self.classifier(lstm_features[:, -1, :])
+        img_outputs = self.classifier(total_features[:, -1, :])
 
         return img_outputs
