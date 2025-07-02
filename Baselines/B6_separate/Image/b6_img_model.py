@@ -19,16 +19,15 @@ class B6ImgModel(_BaseModel):
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(2048, 512, batch_first=True)
+        self.lstm = nn.LSTM(2048, 1024, batch_first=True)
 
-        # self.layer_norm = nn.LayerNorm(512)
+        self.layer_norm = nn.LayerNorm(1024)
 
         self.classifier = nn.Sequential(
-            nn.Linear(512, 256),
-            nn.ReLU(),
+            nn.Linear(1024, 512),
             nn.Dropout(0.2),
             nn.Linear(
-                256,
+                512,
                 len(self.get_cf().dataset.get_categories(
                     ClassificationLevel.IMAGE)),
             )
@@ -52,7 +51,7 @@ class B6ImgModel(_BaseModel):
 
         lstm_features, _ = self.lstm(pooled_features)
 
-        # lstm_features = self.layer_norm(lstm_features)
+        lstm_features = self.layer_norm(lstm_features)
 
         img_outputs = self.classifier(lstm_features[:, -1, :])
 
