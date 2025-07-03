@@ -24,17 +24,19 @@ class B7JointModel(_BaseModel):
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(2048, 1024, batch_first=True)
+        self.lstm = nn.LSTM(2048, 512, batch_first=True)
 
         self.classifier = nn.Sequential(
             nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.Linear(512, 256),
+            nn.Dropout(0.2),
             nn.Linear(
-                512,
+                256,
                 len(self.get_cf().dataset.get_categories(
                     ClassificationLevel.IMAGE)),
             )
+
         )
 
     def forward(self, x: torch.Tensor):
@@ -65,9 +67,16 @@ class B7JointModel(_BaseModel):
         ).view(batch_size, players_count, frames_count, -1).contiguous()
 
         pooled_features = self.pool(total_features)
+        player_pooled_features = pooled_features.view(
+            batch_size, frames_count, 512, 4)[:, :, :, 0:2].mean(dim=-1)
 
         temporal_features, _ = self.lstm(pooled_features)
 
-        img_outputs = self.classifier(temporal_features[:, -1, :])
+        total_features_2 = torch.cat([
+            player_pooled_features,
+            temporal_features
+        ], dim=2)
+
+        img_outputs = self.classifier(total_features_2[:, -1, :])
 
         return player_outputs, img_outputs
