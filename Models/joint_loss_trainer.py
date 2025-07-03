@@ -32,11 +32,11 @@ class JointLossTrainer(_BaseTrainer):
     def get_optimizers(self) -> list[torch.optim.Optimizer]:
         params = self.get_parameters()
         return [
-            optim.Adam(
+            optim.AdamW(
                 (p for p in params[0] if p.requires_grad),
                 lr=self.get_bl_cf().training.learning_rate
             ),
-            optim.Adam(
+            optim.AdamW(
                 (p for p in params[1] if p.requires_grad),
                 lr=self.get_bl_cf().training.learning_rate
             )

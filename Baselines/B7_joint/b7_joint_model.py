@@ -15,23 +15,22 @@ class B7JointModel(_BaseModel):
             .set_backbone_layer_requires_grad('layer4', True) \
             .set_backbone_layer_requires_grad('fc', True)
 
-        self.player_lstm = nn.LSTM(2048, 512, batch_first=True)
+        self.player_lstm = nn.LSTM(2048, 1024, batch_first=True)
         self.player_classifier = nn.Linear(
-            512,
+            1024,
             len(self.get_cf().dataset.get_categories(ClassificationLevel.PLAYER))
         )
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(512, 256, batch_first=True)
+        self.lstm = nn.LSTM(2048, 1024, batch_first=True)
 
         self.classifier = nn.Sequential(
-            nn.Linear(256, 128),
-            nn.LayerNorm(128),
+            nn.Linear(1024, 512),
             nn.ReLU(),
             nn.Dropout(0.5),
             nn.Linear(
-                128,
+                512,
                 len(self.get_cf().dataset.get_categories(
                     ClassificationLevel.IMAGE)),
             )
@@ -47,6 +46,7 @@ class B7JointModel(_BaseModel):
 
         _, player_features = self.player_base(x_view)
         player_temporal_features, _ = self.player_lstm(player_features)
+
         player_outputs = self.player_classifier(
             player_temporal_features[:, -1, :]
         ).view(batch_size*players_count, -1)
@@ -55,11 +55,15 @@ class B7JointModel(_BaseModel):
             batch_size*players_count, -1
         )
 
-        player_temporal_features = player_temporal_features.view(
-            batch_size, players_count, frames_count, -1
-        )
+        total_features = torch.cat(
+            [
+                player_features.view(
+                    batch_size*players_count, frames_count, 1024, 2).mean(dim=-1),
+                player_temporal_features
+            ], dim=2
+        ).view(batch_size, players_count, frames_count, -1).contiguous()
 
-        pooled_features = self.pool(player_temporal_features)
+        pooled_features = self.pool(total_features)
 
         temporal_features, _ = self.lstm(pooled_features)
 

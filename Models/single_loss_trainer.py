@@ -17,7 +17,7 @@ class SingleLossTrainer(_BaseTrainer):
         return [nn.CrossEntropyLoss()]
 
     def get_optimizers(self) -> list[torch.optim.Optimizer]:
-        return [torch.optim.Adam(
+        return [torch.optim.AdamW(
             (p for p in self._model.parameters() if p.requires_grad),
             lr=self.get_bl_cf().training.learning_rate
         )]
