@@ -13,7 +13,8 @@ class B7JointModel(_BaseModel):
             .set_backbone_requires_grad(False) \
             .set_backbone_layer_requires_grad('layer3', True) \
             .set_backbone_layer_requires_grad('layer4', True) \
-            .set_backbone_layer_requires_grad('fc', True)
+            .set_backbone_layer_requires_grad('fc', True) \
+            .freeze_bn_layers()
 
         self.player_lstm = nn.LSTM(2048, 1024, batch_first=True)
         self.player_classifier = nn.Linear(
