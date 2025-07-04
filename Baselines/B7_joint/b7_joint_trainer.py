@@ -20,4 +20,8 @@ class B7JointTrainer(JointLossTrainer):
 
     def get_parameters(self) -> tuple[Iterator[nn.Parameter]]:
         model: B7JointModel = self._model
-        return model.player_base.parameters(), chain(model.lstm.parameters(), model.classifier.parameters())
+        return (
+            chain(model.player_base.parameters(), model.player_lstm.parameters(
+            ), model.player_classifier.parameters()),
+            chain(model.lstm.parameters(), model.classifier.parameters())
+        )
