@@ -24,15 +24,14 @@ class B8JointModel(_BaseModel):
 
         self.pool = CustomMaxPool(dim=1)
 
-        self.lstm = nn.LSTM(4096, 1024, batch_first=True)
+        self.lstm = nn.LSTM(2048, 1024, batch_first=True)
 
         self.classifier = nn.Sequential(
             nn.Linear(1024, 512),
             nn.ReLU(),
-            nn.Linear(512, 256),
-            nn.Dropout(0.2),
+            nn.Dropout(0.5),
             nn.Linear(
-                256,
+                512,
                 len(self.get_cf().dataset.get_categories(
                     ClassificationLevel.IMAGE)),
             )
@@ -58,24 +57,19 @@ class B8JointModel(_BaseModel):
             batch_size*players_count, -1
         )
 
+        player_temporal_features = player_temporal_features.view(
+            batch_size, players_count, frames_count, -1)
+
+        team_1_players_features = player_temporal_features[:, :6, :, :]
+        team_2_players_features = player_temporal_features[:, 6:, :, :]
+
         total_features = torch.cat(
-            [
-                player_features.view(
-                    batch_size*players_count, frames_count, 1024, 2).mean(dim=-1),
-                player_temporal_features
-            ], dim=2
-        ).view(batch_size, players_count, frames_count, -1).contiguous()
-
-        team_1_players_features = total_features[:, :6, :, :]
-        team_2_players_features = total_features[:, 6:, :, :]
-
-        total_features_2 = torch.cat(
             [self.pool(team_1_players_features),
              self.pool(team_2_players_features)],
             dim=2
         )
 
-        temporal_features, _ = self.lstm(total_features_2)
+        temporal_features, _ = self.lstm(total_features)
 
         img_outputs = self.classifier(temporal_features[:, -1, :])
 
