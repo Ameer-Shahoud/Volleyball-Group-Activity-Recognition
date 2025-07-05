@@ -40,11 +40,27 @@ class ImagePlayersDataset(_BaseDataset):
         items: list[ImagePlayersDatasetItem] = self._flatten_dataset[index]
 
         img_players: list[list[tuple[torch.Tensor, str]]] = []
+
+        box_orders: dict = None
+        if self.get_bl_cf().dataset.filter_missing_players_boxes_frames:
+            item = items[0]
+            box_orders = {id: None for id in range(0, 12)}
+            orders = sorted(map(lambda b: (b.box[0], b.player_ID), item.boxes))
+            for i, o in enumerate(orders):
+                box_orders[o[1]] = i
+
         for item in items:
             try:
-                _boxes = sorted(
-                    map(lambda b: (b.player_ID, b.box, b.category), item.boxes)
-                )
+                if box_orders:
+                    _boxes: list[tuple] = [None for _ in range(12)]
+                    for b in item.boxes:
+                        _boxes[box_orders[b.player_ID]] = (
+                            b.player_ID, b.box, b.category
+                        )
+                else:
+                    _boxes = sorted(
+                        map(lambda b: (b.player_ID, b.box, b.category), item.boxes)
+                    )
                 img = Image.open(item.img_path).convert('RGB')
                 imgs: list[torch.Tensor] = []
                 for box in _boxes:
